@@ -1,7 +1,7 @@
 {
   "name": "oh-my-agent",
   "version": "6.12.1",
-  "releaseDate": "2026-05-05T09:08:56.903Z",
+  "releaseDate": "2026-05-05T12:02:26.893Z",
   "repository": "https://github.com/first-fluke/oh-my-agent",
   "files": [
     {
@@ -111,8 +111,8 @@
     },
     {
       "path": ".agents/hooks/core/triggers.json",
-      "sha256": "d85b5b64dbd7a46ce232edb783be9087cfdbbfef4e8de9f04b93f3a49d326a46",
-      "size": 65426
+      "sha256": "a42b0d8ce88a2d83e4168b71baf51b27f168805d4d7044446eb03147d8ad1d3f",
+      "size": 65577
     },
     {
       "path": ".agents/hooks/core/types.ts",
@@ -156,8 +156,8 @@
     },
     {
       "path": ".agents/oma-config.yaml",
-      "sha256": "ea3ee946ac7f06fe011d86cc2966dadf48adbe36a66c467c8a30d94637687f6a",
-      "size": 3642
+      "sha256": "347806be345f2b54421a5974814efb1d8578fe95a0f044eae681aabd83d5e3ce",
+      "size": 4231
     },
     {
       "path": ".agents/rules/backend.md",
@@ -196,8 +196,8 @@
     },
     {
       "path": ".agents/rules/i18n-guide.md",
-      "sha256": "32dea4291206b532dcc672f2f9e7399f6b2ccbc552310af23da4c9737734430d",
-      "size": 3769
+      "sha256": "6f3ee72cad7758d054a25e48d0a4bb12203300b7726d716f4115697564f1fca8",
+      "size": 4424
     },
     {
       "path": ".agents/rules/infrastructure.md",
@@ -1356,13 +1356,13 @@
     },
     {
       "path": ".agents/skills/oma-translator/SKILL.md",
-      "sha256": "3f395c7ac81644824d0047be4499dbf8d1270c74af084155fb4f921a9b97a833",
-      "size": 18855
+      "sha256": "67c164f3874f90d8143154c89a2fe7904849abfa2f4e4afa85cc228b66c109a9",
+      "size": 22663
     },
     {
       "path": ".agents/skills/oma-translator/resources/anti-ai-patterns.md",
-      "sha256": "0c92617d86110fceed8e0975cad65b95d10dc48a2042764c203f9c81bd9745cc",
-      "size": 11888
+      "sha256": "a9aa09b6e5ace5abed8808c6edea39eac836fdde55c16c5c694ce702690f3738",
+      "size": 14267
     },
     {
       "path": ".agents/skills/oma-translator/resources/translation-rubric.md",
