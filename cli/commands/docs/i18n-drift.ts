@@ -12,7 +12,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
 export interface I18nDriftPair {
@@ -60,7 +60,9 @@ function gitLastCommitUnix(repoRoot: string, file: string): number | null {
   }
 }
 
-function classifySeverity(pair: Omit<I18nDriftPair, "severity">): I18nDriftPair["severity"] {
+function classifySeverity(
+  pair: Omit<I18nDriftPair, "severity">,
+): I18nDriftPair["severity"] {
   // CRITICAL: target file missing entirely (caller signals via tgtLines === -1)
   if (pair.tgtLines === -1) return "CRITICAL";
   // HIGH: large line drift OR EN newer with structural drift
@@ -73,7 +75,11 @@ function classifySeverity(pair: Omit<I18nDriftPair, "severity">): I18nDriftPair[
   return "LOW";
 }
 
-function findEnDocs(docsRoot: string, results: string[] = [], base = docsRoot): string[] {
+function findEnDocs(
+  docsRoot: string,
+  results: string[] = [],
+  base = docsRoot,
+): string[] {
   if (!existsSync(docsRoot)) return results;
   for (const entry of readdirSync(docsRoot, { withFileTypes: true })) {
     const full = join(docsRoot, entry.name);
@@ -116,7 +122,8 @@ const SEVERITY_RANK: Record<I18nDriftPair["severity"], number> = {
 export function detectI18nDrift(opts: DetectI18nDriftOptions): I18nDriftPair[] {
   const docsDir = opts.docsDir ?? "web/docs";
   const i18nDir = opts.i18nDir ?? "web/i18n";
-  const subpath = opts.i18nDocsSubpath ?? "docusaurus-plugin-content-docs/current";
+  const subpath =
+    opts.i18nDocsSubpath ?? "docusaurus-plugin-content-docs/current";
   const minRank = SEVERITY_RANK[opts.minSeverity ?? "LOW"];
 
   const docsAbs = join(opts.repoRoot, docsDir);
@@ -161,7 +168,8 @@ export function detectI18nDrift(opts: DetectI18nDriftOptions): I18nDriftPair[] {
       const tgtHeadings = countHeadings(tgtText);
       const tgtMtime = gitLastCommitUnix(opts.repoRoot, tgtRel);
       const linesDiff = Math.abs(enLines - tgtLines);
-      const linesDiffPct = enLines > 0 ? Math.round((linesDiff * 100) / enLines) : 0;
+      const linesDiffPct =
+        enLines > 0 ? Math.round((linesDiff * 100) / enLines) : 0;
       const headingCountDiff = Math.abs(enHeadings - tgtHeadings);
       const enNewerThanTgt =
         enMtime !== null && tgtMtime !== null && enMtime > tgtMtime;
@@ -181,7 +189,10 @@ export function detectI18nDrift(opts: DetectI18nDriftOptions): I18nDriftPair[] {
         tgtMtimeUnix: tgtMtime,
         enNewerThanTgt,
       };
-      pairs.push({ ...partial, severity: classifySeverity({ ...partial, severity: "LOW" }) });
+      pairs.push({
+        ...partial,
+        severity: classifySeverity({ ...partial, severity: "LOW" }),
+      });
     }
   }
 

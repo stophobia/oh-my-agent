@@ -2,7 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { detectI18nDrift, summarizeDrift } from "./i18n-drift.js";
+import {
+  detectI18nDrift,
+  type I18nDriftPair,
+  summarizeDrift,
+} from "./i18n-drift.js";
 
 function mkrepo(): string {
   const root = mkdtempSync(join(tmpdir(), "oma-i18n-drift-"));
@@ -36,10 +40,7 @@ describe("detectI18nDrift", () => {
       );
       // ko locale exists but no translation file
       mkdirSync(
-        join(
-          root,
-          "web/i18n/ko/docusaurus-plugin-content-docs/current",
-        ),
+        join(root, "web/i18n/ko/docusaurus-plugin-content-docs/current"),
         { recursive: true },
       );
       const pairs = detectI18nDrift({ repoRoot: root, minSeverity: "LOW" });
@@ -193,8 +194,7 @@ describe("summarizeDrift", () => {
       { severity: "HIGH" },
       { severity: "MEDIUM" },
       { severity: "LOW" },
-    // biome-ignore lint/suspicious/noExplicitAny: test input doesn't need full schema
-    ] as any;
+    ] as unknown as I18nDriftPair[];
     const s = summarizeDrift(pairs);
     expect(s.total).toBe(4);
     expect(s.bySeverity.HIGH).toBe(2);
@@ -204,8 +204,9 @@ describe("summarizeDrift", () => {
   });
 
   it("limits topPairs to 10", () => {
-    // biome-ignore lint/suspicious/noExplicitAny: test input doesn't need full schema
-    const pairs = Array.from({ length: 20 }, () => ({ severity: "LOW" })) as any;
+    const pairs = Array.from({ length: 20 }, () => ({
+      severity: "LOW",
+    })) as unknown as I18nDriftPair[];
     const s = summarizeDrift(pairs);
     expect(s.topPairs).toHaveLength(10);
   });
