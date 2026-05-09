@@ -8,6 +8,7 @@ import { parseOmaConfig } from "../../platform/agent-config.js";
 import type { DocRefsIndex } from "../../types/docs.js";
 import { extractDocRefs, writeDocRefsIndex } from "./extract.js";
 import { detectI18nDrift, summarizeDrift } from "./i18n-drift.js";
+import { lintI18nStyle, summarizeStyleIssues } from "./lint-i18n.js";
 import { renderJson, renderMarkdown } from "./reporter.js";
 import { resolveRefs } from "./resolve.js";
 import { proposeSyncPatches } from "./sync-propose.js";
@@ -347,6 +348,74 @@ export function registerDocsCommands(program: Command): void {
         console.log();
         console.log(
           "Pass each pair to `oma-translator` in diff-sync mode (see SKILL.md § Diff-Sync Mode).",
+        );
+      }),
+    );
+
+  docs
+    .command("lint")
+    .description(
+      "Lint translated docs for content-level anti-patterns (em-dashes in " +
+        "CJK targets, etc.). Complements `oma docs i18n` (structural drift) " +
+        "with style/anti-pattern checks per oma-translator SKILL.md § Stage 4. " +
+        "The CLI never auto-fixes — it only reports issues for the host LLM " +
+        "to restructure.",
+    )
+    .option(
+      "--json",
+      "Output issues as JSON instead of human-readable markdown",
+    )
+    .option(
+      "--locales <list>",
+      "Comma-separated CJK locales to lint (default: ko,ja,zh)",
+    )
+    .action(
+      runAction(async (_options, command) => {
+        const opts = command.opts() as {
+          json?: boolean;
+          locales?: string;
+        };
+        const repoRoot = process.cwd();
+        const cjkLocales = opts.locales
+          ? opts.locales
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : undefined;
+
+        const issues = lintI18nStyle({ repoRoot, cjkLocales });
+
+        if (opts.json) {
+          console.log(JSON.stringify({ issues }, null, 2));
+          return;
+        }
+
+        if (issues.length === 0) {
+          console.log("No i18n style issues found.");
+          return;
+        }
+
+        const summary = summarizeStyleIssues(issues);
+        console.log(`\n${summary.total} style issue(s) found.\n`);
+        console.log(
+          `By rule: ${Object.entries(summary.byRule)
+            .map(([r, n]) => `${r}=${n}`)
+            .join(" ")}`,
+        );
+        console.log(
+          `By lang: ${Object.entries(summary.byLang)
+            .map(([l, n]) => `${l}=${n}`)
+            .join(" ")}\n`,
+        );
+        console.log("Top files:");
+        for (const f of summary.byFile.slice(0, 10)) {
+          console.log(
+            `  ${f.count.toString().padStart(4)}  [${f.lang}] ${f.file}`,
+          );
+        }
+        console.log();
+        console.log(
+          "Pass each issue to `oma-translator` for restructuring (see SKILL.md § Stage 4-A em-dash rule).",
         );
       }),
     );
