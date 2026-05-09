@@ -36,6 +36,13 @@ export const RECOMMENDED_CODEX_FEATURES = {
   child_agents_md: true,
 } as const;
 
+// Codex CLI feature flags that have been renamed/removed upstream and should
+// be stripped from the user's `[features]` table on install/update.
+// - `codex_hooks` → `hooks` (Codex 0.124+, 2026-05): the variant now writes
+//   `hooks = true`; we drop the old key so Codex stops emitting deprecation
+//   warnings.
+export const DEPRECATED_CODEX_FEATURES = ["codex_hooks"] as const;
+
 type JsonRecord = Record<string, unknown>;
 
 interface CodexMcpServer {
@@ -87,6 +94,9 @@ export function needsCodexSettingsUpdate(settings: unknown): boolean {
   for (const [key, value] of Object.entries(RECOMMENDED_CODEX_FEATURES)) {
     if (features?.[key] !== value) return true;
   }
+  for (const key of DEPRECATED_CODEX_FEATURES) {
+    if (features && key in features) return true;
+  }
   return false;
 }
 
@@ -109,10 +119,14 @@ export function applyRecommendedCodexSettings(
   };
 
   const currentFeatures = isRecord(base.features) ? base.features : {};
-  base.features = {
+  const nextFeatures: Record<string, unknown> = {
     ...currentFeatures,
     ...RECOMMENDED_CODEX_FEATURES,
   };
+  for (const key of DEPRECATED_CODEX_FEATURES) {
+    delete nextFeatures[key];
+  }
+  base.features = nextFeatures;
 
   return base;
 }

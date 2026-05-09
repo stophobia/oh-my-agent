@@ -63,7 +63,7 @@ describe("codex settings", () => {
 
   it("applies recommended mcp_servers and features without dropping existing tables", () => {
     const settings = {
-      features: { codex_hooks: true },
+      features: { custom_flag: true },
       mcp_servers: {
         other: { command: "npx", args: ["other-mcp"] },
       },
@@ -76,10 +76,40 @@ describe("codex settings", () => {
     });
     expect(result.mcp_servers?.serena).toEqual(RECOMMENDED_CODEX_MCP.serena);
     expect(result.features).toEqual({
-      codex_hooks: true,
+      custom_flag: true,
       ...RECOMMENDED_CODEX_FEATURES,
     });
     expect(needsCodexSettingsUpdate(result)).toBe(false);
+  });
+
+  it("strips deprecated codex_hooks key during apply", () => {
+    const settings = {
+      features: { codex_hooks: true, custom_flag: true },
+      mcp_servers: {
+        serena: { command: "uvx", args: ["serena"] },
+      },
+    };
+
+    const result = applyRecommendedCodexSettings(settings);
+    expect(result.features).toEqual({
+      custom_flag: true,
+      ...RECOMMENDED_CODEX_FEATURES,
+    });
+    expect(result.features?.codex_hooks).toBeUndefined();
+    expect(needsCodexSettingsUpdate(result)).toBe(false);
+  });
+
+  it("requires update when deprecated codex_hooks key is present", () => {
+    const settings = {
+      mcp_servers: {
+        serena: {
+          command: "uvx",
+          args: ["--from", "git+https://github.com/oraios/serena", "serena"],
+        },
+      },
+      features: { ...RECOMMENDED_CODEX_FEATURES, codex_hooks: true },
+    };
+    expect(needsCodexSettingsUpdate(settings)).toBe(true);
   });
 
   it("force-enables recommended features even when user disabled them", () => {

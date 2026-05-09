@@ -221,7 +221,7 @@ describe("installHooksFromVariant", () => {
         featureFlags: {
           file: ".codex/config.toml",
           section: "features",
-          flags: { codex_hooks: true },
+          flags: { hooks: true },
         },
       }),
     );
@@ -236,7 +236,7 @@ describe("installHooksFromVariant", () => {
         typeof call[0] === "string" && call[0].includes("config.toml"),
     );
     expect(tomlWrite).toBeTruthy();
-    expect(tomlWrite?.[1]).toContain("codex_hooks = true");
+    expect(tomlWrite?.[1]).toContain("hooks = true");
   });
 
   it("should create settings parent directory before writing hooks.json", () => {
