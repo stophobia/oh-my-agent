@@ -190,8 +190,10 @@ describe("lintI18nStyle - cjk-em-dash rule", () => {
 describe("lintI18nStyle - wrong-language rule", () => {
   // Generate body content long enough (>= 200 chars) to pass the
   // minDetectionChars threshold. Use repeating phrases for stable detection.
-  const koBody = "이것은 한국어 본문입니다. 워크플로우와 에이전트에 대해 설명합니다. 모델 프리셋을 통해 각 에이전트가 사용할 모델을 구성할 수 있습니다. 빌트인 프리셋을 선택하거나 개별 에이전트를 재정의하거나 사용자 정의 프리셋을 정의할 수 있습니다.\n";
-  const enBody = "This is the English body content describing workflows and agents. The model_preset configures which AI model each agent uses. You can pick a built-in preset, override individual agents, or define custom presets with extends.\n";
+  const koBody =
+    "이것은 한국어 본문입니다. 워크플로우와 에이전트에 대해 설명합니다. 모델 프리셋을 통해 각 에이전트가 사용할 모델을 구성할 수 있습니다. 빌트인 프리셋을 선택하거나 개별 에이전트를 재정의하거나 사용자 정의 프리셋을 정의할 수 있습니다.\n";
+  const enBody =
+    "This is the English body content describing workflows and agents. The model_preset configures which AI model each agent uses. You can pick a built-in preset, override individual agents, or define custom presets with extends.\n";
 
   it("does not flag when body language matches expected", () => {
     const root = mkrepo();
