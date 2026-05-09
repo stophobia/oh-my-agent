@@ -1,30 +1,30 @@
 ---
-title: "Guide: Per-Agent Model Configuration"
-description: Configure which AI model each agent uses via model_preset in oma-config.yaml. Covers built-in presets, per-agent overrides, inline model definitions, custom presets with extends, oma doctor --profile, and migration from legacy model_preset (per-agent overrides via `agents:`).
+title: "ガイド：エージェントごとのモデル設定"
+description: oma-config.yamlのmodel_presetを通じて、各エージェントが使用するAIモデルを設定します。組み込みプリセット、エージェント単位のオーバーライド、インラインモデル定義、extendsを使ったカスタムプリセット、oma doctor --profile、レガシーagent_cli_mappingからの移行までをカバーします。
 ---
 
-# Guide: Per-Agent Model Configuration
+# ガイド：エージェントごとのモデル設定
 
-## Overview
+## 概要
 
-`model_preset` is the single concept that controls which model every agent uses. Pick one of the five built-in presets and every agent (pm, backend, frontend, qa, …) is wired to an appropriate model for that vendor stack. Override individual agents as needed. Define additional presets when your team has a non-standard mix.
+`model_preset`は、すべてのエージェントが使用するモデルを制御する単一のコンセプトです。5つの組み込みプリセットから1つを選ぶだけで、すべてのエージェント（pm、backend、frontend、qaなど）が、そのベンダースタックに適したモデルへ接続されます。必要に応じて個別のエージェントをオーバーライドし、チームが標準外の組み合わせを採用している場合は追加のプリセットを定義できます。
 
-All configuration lives in one file: `.agents/oma-config.yaml`.
+すべての設定は1つのファイル（`.agents/oma-config.yaml`）に集約されます。
 
-This page covers:
+このページでは次の内容を扱います。
 
-1. The five built-in presets
-2. Overriding individual agents with the `agents:` map
-3. Inlining custom model slugs with `models:`
-4. Defining custom presets with `custom_presets:` and `extends:`
-5. Inspecting resolved configuration with `oma doctor --profile`
-6. Migration from legacy `model_preset (per-agent overrides via `agents:`)`
+1. 5つの組み込みプリセット
+2. `agents:`マップによる個別エージェントのオーバーライド
+3. `models:`によるカスタムモデルslugのインライン定義
+4. `custom_presets:`と`extends:`によるカスタムプリセット定義
+5. `oma doctor --profile`による解決済み設定の確認
+6. レガシー`agent_cli_mapping`からの移行
 
 ---
 
-## Built-In Presets
+## 組み込みプリセット
 
-Set `model_preset` to one of the five built-in keys:
+`model_preset`に、5つの組み込みキーのうち1つを設定します。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -32,21 +32,21 @@ language: en
 model_preset: gemini-only
 ```
 
-| Key | Description | Best for |
+| キー | 説明 | 推奨ユースケース |
 |:----|:-----------|:---------|
-| `claude-only` | All agents use Claude (Sonnet/Opus) | Claude Max subscription holders |
-| `codex-only` | All agents use OpenAI Codex (GPT-5.x) with effort levels | ChatGPT Plus/Pro users |
-| `gemini-only` | All agents use Gemini CLI, thinking enabled for implementation roles | Google AI Pro users |
-| `qwen-only` | All agents routed external via Qwen Code; binary thinking (no effort levels) | Local / self-hosted inference |
-| `antigravity` | Mixed: impl roles use Codex, architecture/qa/pm use Claude, retrieval uses Gemini | Cross-vendor strengths without managing per-agent config |
+| `claude-only` | すべてのエージェントがClaude（Sonnet/Opus）を使用 | Claude Maxサブスクリプション利用者 |
+| `codex-only` | すべてのエージェントがOpenAI Codex（GPT-5.x）をeffortレベル付きで使用 | ChatGPT Plus/Proユーザー |
+| `gemini-only` | すべてのエージェントがGemini CLIを使用し、実装ロールでthinkingを有効化 | Google AI Proユーザー |
+| `qwen-only` | すべてのエージェントがQwen Code経由で外部ルーティング、バイナリthinking（effortレベルなし） | ローカル/セルフホスト推論 |
+| `antigravity` | 混在構成：実装ロールはCodex、architecture/qa/pmはClaude、retrievalはGemini | エージェントごとの設定を管理せずに、各ベンダーの強みを活用 |
 
-Built-in presets ship inside the CLI package and update automatically when you upgrade `oh-my-agent`. No local file to maintain.
+組み込みプリセットはCLIパッケージに同梱されており、`oh-my-agent`をアップグレードすると自動的に更新されます。ローカルで保守するファイルはありません。
 
 ---
 
-## Overriding Individual Agents
+## 個別エージェントのオーバーライド
 
-Use the `agents:` map to override specific agents on top of the active preset. Only agents you list are affected; the rest stay on the preset defaults.
+`agents:`マップを使うと、有効なプリセットの上に特定のエージェントだけオーバーライドできます。影響を受けるのはリストに記載したエージェントのみで、その他はプリセットのデフォルト値が維持されます。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -54,28 +54,28 @@ language: en
 model_preset: gemini-only
 
 agents:
-  backend: { model: openai/gpt-5.3-codex, effort: high }
+  backend: { model: openai/gpt-5.5, effort: high }
   qa:      { model: anthropic/claude-sonnet-4-6 }
 ```
 
-Each entry is an `AgentSpec` object:
+各エントリは`AgentSpec`オブジェクトです。
 
-| Field | Type | Required | Description |
+| フィールド | 型 | 必須 | 説明 |
 |:------|:-----|:---------|:-----------|
-| `model` | string | Yes | Model slug (built-in or user-defined) |
-| `effort` | `low` \| `medium` \| `high` | No | Reasoning effort (ignored on models that do not support it) |
-| `thinking` | boolean | No | Enable extended thinking (model-specific) |
-| `memory` | `user` \| `project` \| `local` | No | Memory scope for the agent |
+| `model` | string | はい | モデルslug（組み込みまたはユーザー定義） |
+| `effort` | `low` \| `medium` \| `high` | いいえ | 推論effort（サポートしないモデルでは無視） |
+| `thinking` | boolean | いいえ | 拡張thinkingを有効化（モデル依存） |
+| `memory` | `user` \| `project` \| `local` | いいえ | エージェントのメモリスコープ |
 
-Valid agent IDs: `orchestrator`, `architecture`, `qa`, `pm`, `backend`, `frontend`, `mobile`, `db`, `debug`, `tf-infra`, `retrieval`.
+有効なエージェントID：`orchestrator`、`architecture`、`qa`、`pm`、`backend`、`frontend`、`mobile`、`db`、`debug`、`tf-infra`、`retrieval`。
 
-The merge is shallow: each field in your override replaces the preset value for that field. Fields you omit keep their preset value.
+マージは浅いマージです。オーバーライド側の各フィールドは、そのフィールドのプリセット値を置き換えます。省略したフィールドはプリセット値のまま維持されます。
 
 ---
 
-## Inlining Model Slugs
+## モデルslugのインライン定義
 
-Register model slugs that are not yet in the built-in registry under `models:`. Once registered, use the slug anywhere in `agents:` or `custom_presets:`.
+組み込みレジストリにまだ含まれていないモデルslugは、`models:`の下に登録します。登録後は、`agents:`や`custom_presets:`の任意の場所でそのslugを使用できます。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -88,13 +88,13 @@ models:
       thinking: true
 ```
 
-> If a user-defined slug collides with a built-in slug, the user definition wins and a warning is emitted.
+> ユーザー定義のslugが組み込みのslugと衝突した場合、ユーザー定義側が優先され、警告が出力されます。
 
 ---
 
-## Custom Presets
+## カスタムプリセット
 
-Define additional presets in `custom_presets:`. Use `extends:` to inherit all agent defaults from a built-in preset and override only the agents you care about.
+`custom_presets:`に追加のプリセットを定義します。`extends:`を使うと、組み込みプリセットからすべてのエージェントデフォルトを継承し、必要なエージェントのみをオーバーライドできます。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -103,27 +103,27 @@ model_preset: my-team
 
 custom_presets:
   my-team:
-    extends: claude-only              # base preset — partial merge
+    extends: claude-only              # ベースプリセット（部分マージ）
     description: "Team A — sonnet base, codex for implementation"
     agent_defaults:
-      backend: { model: openai/gpt-5.3-codex, effort: high }
-      db:      { model: openai/gpt-5.3-codex, effort: high }
-      # all other agents inherited from claude-only
+      backend: { model: openai/gpt-5.5, effort: high }
+      db:      { model: openai/gpt-5.5, effort: high }
+      # その他のエージェントはすべてclaude-onlyから継承
 ```
 
-Without `extends:`, you must provide `agent_defaults` for all 11 agent roles. With `extends:`, only the entries you list are overridden; the rest are inherited from the base preset.
+`extends:`を指定しない場合、11個のエージェントロール全てに対して`agent_defaults`を提供する必要があります。`extends:`を指定した場合は、リストに記載したエントリのみがオーバーライドされ、残りはベースプリセットから継承されます。
 
 ---
 
 ## `oma doctor --profile`
 
-Run `oma doctor --profile` to inspect the fully resolved model matrix after preset defaults, `custom_presets`, and `agents:` overrides are merged.
+`oma doctor --profile`を実行すると、プリセットのデフォルト、`custom_presets`、`agents:`オーバーライドがマージされた後の、完全に解決済みのモデルマトリクスを確認できます。
 
 ```bash
 oma doctor --profile
 ```
 
-**Sample output:**
+**出力例：**
 
 ```
 oh-my-agent — Profile Health (preset=antigravity)
@@ -134,36 +134,36 @@ oh-my-agent — Profile Health (preset=antigravity)
 │ orchestrator │ anthropic/claude-sonnet-4-6  │ claude   │ ✓ logged in      │ (preset) │
 │ architecture │ anthropic/claude-opus-4-7    │ claude   │ ✓ logged in      │ (preset) │
 │ qa           │ anthropic/claude-sonnet-4-6  │ claude   │ ✓ logged in      │ (preset) │
-│ backend      │ openai/gpt-5.3-codex         │ codex    │ ✗ not logged in  │ (override)│
+│ backend      │ openai/gpt-5.5         │ codex    │ ✗ not logged in  │ (override)│
 │ retrieval    │ google/gemini-3.1-flash-lite │ gemini   │ ✗ not logged in  │ (preset) │
 └──────────────┴──────────────────────────────┴──────────┴──────────────────┴──────────┘
 ```
 
-Each row shows the resolved model slug and which source applied it (`(preset)` or `(override)`). Use this whenever a subagent picks an unexpected vendor.
+各行には、解決済みのモデルslugと、それを適用したソース（`(preset)`または`(override)`）が表示されます。サブエージェントが想定外のベンダーを選択した場合は、このコマンドを使ってください。
 
 ---
 
-## Migration from Legacy `model_preset (per-agent overrides via `agents:`)`
+## レガシー`agent_cli_mapping`からの移行
 
-Migration 008 runs automatically on `oma install` and `oma update`. It converts legacy projects in place:
+Migration 008は`oma install`および`oma update`の実行時に自動で起動し、レガシープロジェクトをその場で変換します。
 
-| Legacy config | Result after migration 008 |
+| レガシー設定 | Migration 008適用後の結果 |
 |:-------------|:--------------------------|
-| All entries same vendor (e.g. all `gemini`) | `model_preset: gemini-only`, no `agents:` |
-| Mixed vendors | Most-frequent vendor → `model_preset`; others → `agents:` overrides |
-| `AgentSpec` object values | Moved to `agents:` as-is |
-| `models.yaml` content | Inlined into `oma-config.yaml.models` |
-| Customized `defaults.yaml` | Preserved as `custom_presets.user-customized` with a warning |
+| 全エントリが同一ベンダー（例：すべて`gemini`） | `model_preset: gemini-only`、`agents:`なし |
+| ベンダー混在 | 最頻ベンダーを`model_preset`に、それ以外を`agents:`オーバーライドへ |
+| `AgentSpec`オブジェクト値 | そのまま`agents:`へ移動 |
+| `models.yaml`の内容 | `oma-config.yaml.models`にインライン化 |
+| カスタマイズ済みの`defaults.yaml` | `custom_presets.user-customized`として警告付きで保持 |
 
-Originals are backed up to `.agents/.backup-pre-008-{timestamp}/` before any changes. The migration is idempotent. If `model_preset` is already present, it skips.
+オリジナルファイルは変更前に`.agents/.backup-pre-008-{timestamp}/`へバックアップされます。マイグレーションは冪等であり、`model_preset`がすでに存在する場合はスキップされます。
 
-After migration, `cli built-in presets (no user file)`, ``oma-config.yaml` `models:` block`, and the `.agents/config/` directory are removed.
+マイグレーション完了後、`.agents/config/defaults.yaml`、`.agents/config/models.yaml`、および`.agents/config/`ディレクトリは削除されます。
 
 ---
 
-## Session Quota Cap
+## セッションクォータ上限
 
-`session.quota_cap` is unchanged. Add it to `oma-config.yaml` to bound runaway subagent spawning:
+`session.quota_cap`は変更されていません。サブエージェントの暴走的なスポーンを抑制するには、`oma-config.yaml`に追加してください。
 
 ```yaml
 session:
@@ -176,11 +176,11 @@ session:
       google: 200_000
 ```
 
-When a cap is reached, the orchestrator refuses further spawns and surfaces a `QUOTA_EXCEEDED` status.
+上限に達すると、orchestratorはそれ以上のスポーンを拒否し、`QUOTA_EXCEEDED`ステータスを返します。
 
 ---
 
-## Full Example
+## フル設定例
 
 ```yaml
 # .agents/oma-config.yaml
@@ -201,8 +201,8 @@ custom_presets:
     extends: claude-only
     description: "Sonnet base, Codex for backend/db"
     agent_defaults:
-      backend: { model: openai/gpt-5.3-codex, effort: high }
-      db:      { model: openai/gpt-5.3-codex, effort: high }
+      backend: { model: openai/gpt-5.5, effort: high }
+      db:      { model: openai/gpt-5.5, effort: high }
 
 session:
   quota_cap:
@@ -210,4 +210,4 @@ session:
     spawn_count: 40
 ```
 
-Run `oma doctor --profile` to confirm resolution, then start a workflow as usual.
+`oma doctor --profile`を実行して解決結果を確認したうえで、通常通りワークフローを開始してください。

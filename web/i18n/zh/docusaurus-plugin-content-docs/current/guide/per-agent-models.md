@@ -1,30 +1,30 @@
 ---
-title: "Guide: Per-Agent Model Configuration"
-description: Configure which AI model each agent uses via model_preset in oma-config.yaml. Covers built-in presets, per-agent overrides, inline model definitions, custom presets with extends, oma doctor --profile, and migration from legacy model_preset (per-agent overrides via `agents:`).
+title: "指南：按智能体配置模型"
+description: 通过 oma-config.yaml 中的 model_preset 配置每个智能体使用的 AI 模型。涵盖内置预设、按智能体覆盖、内联模型定义、使用 extends 的自定义预设、oma doctor --profile，以及从旧版 agent_cli_mapping 的迁移。
 ---
 
-# Guide: Per-Agent Model Configuration
+# 指南：按智能体配置模型
 
-## Overview
+## 概览
 
-`model_preset` is the single concept that controls which model every agent uses. Pick one of the five built-in presets and every agent (pm, backend, frontend, qa, …) is wired to an appropriate model for that vendor stack. Override individual agents as needed. Define additional presets when your team has a non-standard mix.
+`model_preset` 是控制每个智能体使用哪个模型的唯一概念。从五个内置预设中选一个，所有智能体（pm、backend、frontend、qa 等）都会自动接入对应厂商生态中合适的模型。如有需要，可单独覆盖某些智能体。当团队使用非标准组合时，可定义额外的预设。
 
-All configuration lives in one file: `.agents/oma-config.yaml`.
+所有配置都集中在一个文件中：`.agents/oma-config.yaml`。
 
-This page covers:
+本页涵盖以下内容：
 
-1. The five built-in presets
-2. Overriding individual agents with the `agents:` map
-3. Inlining custom model slugs with `models:`
-4. Defining custom presets with `custom_presets:` and `extends:`
-5. Inspecting resolved configuration with `oma doctor --profile`
-6. Migration from legacy `model_preset (per-agent overrides via `agents:`)`
+1. 五个内置预设
+2. 通过 `agents:` 映射覆盖单个智能体
+3. 使用 `models:` 内联自定义模型 slug
+4. 使用 `custom_presets:` 和 `extends:` 定义自定义预设
+5. 通过 `oma doctor --profile` 查看解析后的配置
+6. 从旧版 `agent_cli_mapping` 的迁移
 
 ---
 
-## Built-In Presets
+## 内置预设
 
-Set `model_preset` to one of the five built-in keys:
+将 `model_preset` 设置为以下五个内置键之一：
 
 ```yaml
 # .agents/oma-config.yaml
@@ -32,21 +32,21 @@ language: en
 model_preset: gemini-only
 ```
 
-| Key | Description | Best for |
+| 键 | 描述 | 适用场景 |
 |:----|:-----------|:---------|
-| `claude-only` | All agents use Claude (Sonnet/Opus) | Claude Max subscription holders |
-| `codex-only` | All agents use OpenAI Codex (GPT-5.x) with effort levels | ChatGPT Plus/Pro users |
-| `gemini-only` | All agents use Gemini CLI, thinking enabled for implementation roles | Google AI Pro users |
-| `qwen-only` | All agents routed external via Qwen Code; binary thinking (no effort levels) | Local / self-hosted inference |
-| `antigravity` | Mixed: impl roles use Codex, architecture/qa/pm use Claude, retrieval uses Gemini | Cross-vendor strengths without managing per-agent config |
+| `claude-only` | 所有智能体使用 Claude（Sonnet/Opus） | Claude Max 订阅用户 |
+| `codex-only` | 所有智能体使用带 effort 等级的 OpenAI Codex（GPT-5.x） | ChatGPT Plus/Pro 用户 |
+| `gemini-only` | 所有智能体使用 Gemini CLI，实现类角色启用 thinking | Google AI Pro 用户 |
+| `qwen-only` | 所有智能体通过 Qwen Code 进行外部路由；二元 thinking（无 effort 等级） | 本地 / 自托管推理 |
+| `antigravity` | 混合：实现类角色用 Codex，architecture/qa/pm 用 Claude，retrieval 用 Gemini | 跨厂商发挥各自优势，无需逐个智能体配置 |
 
-Built-in presets ship inside the CLI package and update automatically when you upgrade `oh-my-agent`. No local file to maintain.
+内置预设随 CLI 包一起发布，并在升级 `oh-my-agent` 时自动更新。无需维护任何本地文件。
 
 ---
 
-## Overriding Individual Agents
+## 覆盖单个智能体
 
-Use the `agents:` map to override specific agents on top of the active preset. Only agents you list are affected; the rest stay on the preset defaults.
+使用 `agents:` 映射在当前预设之上覆盖特定智能体。仅你列出的智能体会被影响，其余继续使用预设默认值。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -54,28 +54,28 @@ language: en
 model_preset: gemini-only
 
 agents:
-  backend: { model: openai/gpt-5.3-codex, effort: high }
+  backend: { model: openai/gpt-5.5, effort: high }
   qa:      { model: anthropic/claude-sonnet-4-6 }
 ```
 
-Each entry is an `AgentSpec` object:
+每条配置都是一个 `AgentSpec` 对象：
 
-| Field | Type | Required | Description |
+| 字段 | 类型 | 必填 | 描述 |
 |:------|:-----|:---------|:-----------|
-| `model` | string | Yes | Model slug (built-in or user-defined) |
-| `effort` | `low` \| `medium` \| `high` | No | Reasoning effort (ignored on models that do not support it) |
-| `thinking` | boolean | No | Enable extended thinking (model-specific) |
-| `memory` | `user` \| `project` \| `local` | No | Memory scope for the agent |
+| `model` | string | 是 | 模型 slug（内置或用户定义） |
+| `effort` | `low` \| `medium` \| `high` | 否 | 推理强度（不支持的模型会忽略） |
+| `thinking` | boolean | 否 | 启用扩展思考（取决于具体模型） |
+| `memory` | `user` \| `project` \| `local` | 否 | 智能体的记忆作用域 |
 
-Valid agent IDs: `orchestrator`, `architecture`, `qa`, `pm`, `backend`, `frontend`, `mobile`, `db`, `debug`, `tf-infra`, `retrieval`.
+有效的智能体 ID：`orchestrator`、`architecture`、`qa`、`pm`、`backend`、`frontend`、`mobile`、`db`、`debug`、`tf-infra`、`retrieval`。
 
-The merge is shallow: each field in your override replaces the preset value for that field. Fields you omit keep their preset value.
+合并采用浅合并方式：你覆盖中的每个字段会替换预设中对应字段的值。未填写的字段会保留预设值。
 
 ---
 
-## Inlining Model Slugs
+## 内联模型 slug
 
-Register model slugs that are not yet in the built-in registry under `models:`. Once registered, use the slug anywhere in `agents:` or `custom_presets:`.
+将尚未在内置注册表中的模型 slug 注册到 `models:` 下。注册后即可在 `agents:` 或 `custom_presets:` 的任何位置使用。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -88,13 +88,13 @@ models:
       thinking: true
 ```
 
-> If a user-defined slug collides with a built-in slug, the user definition wins and a warning is emitted.
+> 如果用户定义的 slug 与内置 slug 冲突，以用户定义为准，并会输出警告。
 
 ---
 
-## Custom Presets
+## 自定义预设
 
-Define additional presets in `custom_presets:`. Use `extends:` to inherit all agent defaults from a built-in preset and override only the agents you care about.
+在 `custom_presets:` 中定义额外的预设。使用 `extends:` 从内置预设继承所有智能体默认值，仅覆盖你关心的智能体。
 
 ```yaml
 # .agents/oma-config.yaml
@@ -106,24 +106,24 @@ custom_presets:
     extends: claude-only              # base preset — partial merge
     description: "Team A — sonnet base, codex for implementation"
     agent_defaults:
-      backend: { model: openai/gpt-5.3-codex, effort: high }
-      db:      { model: openai/gpt-5.3-codex, effort: high }
+      backend: { model: openai/gpt-5.5, effort: high }
+      db:      { model: openai/gpt-5.5, effort: high }
       # all other agents inherited from claude-only
 ```
 
-Without `extends:`, you must provide `agent_defaults` for all 11 agent roles. With `extends:`, only the entries you list are overridden; the rest are inherited from the base preset.
+如果不使用 `extends:`，则必须为全部 11 个智能体角色提供 `agent_defaults`。使用 `extends:` 时，仅覆盖你列出的条目，其余从基础预设继承。
 
 ---
 
 ## `oma doctor --profile`
 
-Run `oma doctor --profile` to inspect the fully resolved model matrix，after preset defaults, `custom_presets`, and `agents:` overrides are merged.
+运行 `oma doctor --profile` 可查看完全解析后的模型矩阵（即合并预设默认值、`custom_presets` 和 `agents:` 覆盖之后的结果）。
 
 ```bash
 oma doctor --profile
 ```
 
-**Sample output:**
+**示例输出：**
 
 ```
 oh-my-agent — Profile Health (preset=antigravity)
@@ -134,36 +134,36 @@ oh-my-agent — Profile Health (preset=antigravity)
 │ orchestrator │ anthropic/claude-sonnet-4-6  │ claude   │ ✓ logged in      │ (preset) │
 │ architecture │ anthropic/claude-opus-4-7    │ claude   │ ✓ logged in      │ (preset) │
 │ qa           │ anthropic/claude-sonnet-4-6  │ claude   │ ✓ logged in      │ (preset) │
-│ backend      │ openai/gpt-5.3-codex         │ codex    │ ✗ not logged in  │ (override)│
+│ backend      │ openai/gpt-5.5         │ codex    │ ✗ not logged in  │ (override)│
 │ retrieval    │ google/gemini-3.1-flash-lite │ gemini   │ ✗ not logged in  │ (preset) │
 └──────────────┴──────────────────────────────┴──────────┴──────────────────┴──────────┘
 ```
 
-Each row shows the resolved model slug and which source applied it (`(preset)` or `(override)`). Use this whenever a subagent picks an unexpected vendor.
+每一行展示解析后的模型 slug 以及来源（`(preset)` 或 `(override)`）。当某个子智能体选了意料之外的厂商时，可用此命令排查。
 
 ---
 
-## Migration from Legacy `model_preset (per-agent overrides via `agents:`)`
+## 从旧版 `agent_cli_mapping` 迁移
 
-Migration 008 runs automatically on `oma install` and `oma update`. It converts legacy projects in place:
+迁移 008 会在 `oma install` 和 `oma update` 时自动运行，对旧版项目原地完成转换：
 
-| Legacy config | Result after migration 008 |
+| 旧版配置 | 迁移 008 之后的结果 |
 |:-------------|:--------------------------|
-| All entries same vendor (e.g. all `gemini`) | `model_preset: gemini-only`, no `agents:` |
-| Mixed vendors | Most-frequent vendor → `model_preset`; others → `agents:` overrides |
-| `AgentSpec` object values | Moved to `agents:` as-is |
-| `models.yaml` content | Inlined into `oma-config.yaml.models` |
-| Customized `defaults.yaml` | Preserved as `custom_presets.user-customized` with a warning |
+| 所有条目使用同一厂商（例如全部为 `gemini`） | `model_preset: gemini-only`，无 `agents:` |
+| 多厂商混合 | 出现频率最高的厂商成为 `model_preset`，其余落入 `agents:` 覆盖 |
+| `AgentSpec` 对象值 | 原样移入 `agents:` |
+| `models.yaml` 内容 | 内联到 `oma-config.yaml.models` |
+| 自定义过的 `defaults.yaml` | 保留为 `custom_presets.user-customized` 并附带警告 |
 
-Originals are backed up to `.agents/.backup-pre-008-{timestamp}/` before any changes. The migration is idempotent，if `model_preset` is already present, it skips.
+在任何变更之前，原文件会备份到 `.agents/.backup-pre-008-{timestamp}/`。该迁移是幂等的：若 `model_preset` 已存在，则跳过执行。
 
-After migration, `cli built-in presets (no user file)`, ``oma-config.yaml` `models:` block`, and the `.agents/config/` directory are removed.
+迁移完成后，`.agents/config/defaults.yaml`、`.agents/config/models.yaml` 以及 `.agents/config/` 目录会被删除。
 
 ---
 
-## Session Quota Cap
+## 会话配额上限
 
-`session.quota_cap` is unchanged. Add it to `oma-config.yaml` to bound runaway subagent spawning:
+`session.quota_cap` 保持不变。将其加入 `oma-config.yaml`，可限制子智能体失控生成：
 
 ```yaml
 session:
@@ -176,11 +176,11 @@ session:
       google: 200_000
 ```
 
-When a cap is reached, the orchestrator refuses further spawns and surfaces a `QUOTA_EXCEEDED` status.
+当达到上限时，编排器会拒绝继续生成子智能体，并返回 `QUOTA_EXCEEDED` 状态。
 
 ---
 
-## Full Example
+## 完整示例
 
 ```yaml
 # .agents/oma-config.yaml
@@ -201,8 +201,8 @@ custom_presets:
     extends: claude-only
     description: "Sonnet base, Codex for backend/db"
     agent_defaults:
-      backend: { model: openai/gpt-5.3-codex, effort: high }
-      db:      { model: openai/gpt-5.3-codex, effort: high }
+      backend: { model: openai/gpt-5.5, effort: high }
+      db:      { model: openai/gpt-5.5, effort: high }
 
 session:
   quota_cap:
@@ -210,4 +210,4 @@ session:
     spawn_count: 40
 ```
 
-Run `oma doctor --profile` to confirm resolution, then start a workflow as usual.
+运行 `oma doctor --profile` 确认解析结果，然后照常启动工作流。
