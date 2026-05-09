@@ -109,8 +109,7 @@ Escribe estos en tu IDE de IA para activar procesos estructurados:
 | Comando | Que Hace | Cuando Usarlo |
 |---------|----------|---------------|
 | `/brainstorm` | Ideacion libre y exploracion | Antes de comprometerte con un enfoque |
-| `/plan` | Descomposicion PM → `.agents/results/plan-{sessionId}.json` | Antes de iniciar cualquier funcionalidad compleja |
-| `/exec-plan` | Ejecutar un plan existente paso a paso | Despues de `/plan` |
+| `/plan` | Descomposicion PM, contratos de API y artefactos de plan rastreados en `docs/plans/work/` (`NNN-name.md` secuencial, campo Status para ciclo de vida) | Antes de iniciar cualquier funcionalidad compleja; funcionalidades complejas que necesitan progreso rastreado y registros de decisiones |
 | `/work` | Coordinacion multi-dominio paso a paso | Funcionalidades que abarcan multiples agentes |
 | `/orchestrate` | Ejecucion automatizada de agentes en paralelo | Proyectos grandes, maximo paralelismo |
 | `/ultrawork` | Workflow de calidad de 5 fases (11 puertas de revision) | Entrega de maxima calidad |

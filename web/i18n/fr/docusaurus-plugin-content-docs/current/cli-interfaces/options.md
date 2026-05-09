@@ -69,10 +69,34 @@ Définissez cette variable d'environnement à `json` pour forcer la sortie JSON 
 | `verify` | Yes | Yes | Verification results per check |
 | `visualize` | Yes | Yes | Dependency graph as JSON |
 | `describe` | Always JSON | N/A | Always outputs JSON (introspection command) |
+| `recap` | Yes | Yes | Historique de conversation par outil/session |
+| `export` | Yes | Yes | Statut d'export et chemins cibles |
+| `image generate` / `image doctor` / `image list-vendors` | `--format json` | N/A | Utilisez `--format json` à la place de `--json` |
+| `search ...` | Always JSON | N/A | Toutes les sous-commandes `search` émettent du JSON ; utilisez `--pretty` pour la lecture humaine |
 
 ---
 
 ## Options par commande
+
+### oma (install)
+
+```
+oma
+```
+
+Aucun flag. L'installateur interactif demande la sélection d'un preset et écrit `model_preset` dans `.agents/oma-config.yaml`.
+
+### doctor
+
+```
+oma doctor [--json] [--output <format>] [--profile]
+```
+
+| Flag | Description | Default |
+|:-----|:------------|:--------|
+| `--json` | Émet du JSON au lieu d'un texte formaté. | `false` |
+| `--output <format>` | Format de sortie explicite (`text` ou `json`). Voir [Options de sortie](#options-de-sortie). | `text` |
+| `--profile` | Affiche la matrice de santé des profils — slug de modèle résolu, CLI et statut d'authentification par agent à partir du `model_preset` actif et des surcharges `agents:`. Voir [Per-Agent Models](../guide/per-agent-models.md). | `false` |
 
 ### update
 
@@ -208,6 +232,84 @@ tasks:
   - agent: frontend
     task: "Build user dashboard"
 ```
+
+### recap
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+| Flag | Description | Default |
+|:-----|:------------|:--------|
+| `--window <period>` | Fenêtre temporelle : `1d`, `3d`, `7d`, `2w`, `30d`. Ignoré lorsque `--date` est défini. | `1d` |
+| `--date <date>` | Date spécifique (`YYYY-MM-DD`). Prioritaire sur `--window`. | |
+| `--tool <tools>` | Filtre les sessions par outil. Liste séparée par des virgules : `claude`, `codex`, `gemini`, `qwen`, `cursor`. | tous les outils |
+| `--top <n>` | N'affiche que les N premiers projets/sujets dans le résumé. | illimité |
+| `--sort <metric>` | Trie les sessions par `count` ou `duration`. | `count` |
+| `--mermaid` | Émet un diagramme de Gantt Mermaid au lieu du résumé par défaut. | `false` |
+| `--graph` | Ouvre un graphe interactif dans le navigateur. Mutuellement exclusif avec `--mermaid`. | `false` |
+
+### export
+
+```
+oma export <format> [-d <path>] [--json] [--output <format>]
+```
+
+| Flag | Short | Description | Default |
+|:-----|:------|:------------|:--------|
+| `--dir <path>` | `-d` | Répertoire cible où écrire les règles exportées. | `process.cwd()` |
+
+**Formats pris en charge :** `cursor` (écrit les fichiers `.cursor/rules` dérivés des compétences installées).
+
+### search
+
+```
+oma search <subcommand> [...]
+```
+
+Le groupe `search` gère sa propre sortie JSON (pas de flags `--json` / `--output`). Utilisez `--pretty` sur les sous-commandes URL/requête pour formater la sortie, et appuyez-vous sur les options spécifiques ci-dessous :
+
+| Sous-commande | Options notables |
+|:--------------|:-----------------|
+| `fetch <url>` | `--only`, `--skip`, `--include-archive`, `--timeout`, `--locale`, `--pretty` |
+| `api <url>` / `meta <url>` / `rss <url>` / `archive <url>` | `--timeout`, `--locale`, `--pretty` |
+| `api:search <query>` | `--platforms <list>`, `--timeout`, `--locale`, `--pretty` |
+| `rss:google <query>` | `--locale` (défaut `en-US`) |
+| `media <url>` | `--subs`, `--sub-lang <list>` (défaut `en`), `--format <spec>`, `--timeout` (défaut `30`), `--pretty` |
+| `code <query>` | `--host <github\|gitlab>` (défaut `github`), `--language`, `--repo`, `--limit` (défaut `20`), `--pretty` |
+| `trust <domain>` | `--pretty` |
+| `doctor` | aucun — exécute des vérifications binaires pour Chrome / `python3 curl_cffi` / `yt-dlp` / `gh` |
+
+**Codes de sortie :** `0` ok, `1` erreur, `2` blocked, `3` not-found, `4` invalid-input, `5` auth-required, `6` timeout. Utilisez-les dans les scripts pour distinguer les blocages transitoires des entrées invalides.
+
+### image
+
+```
+oma image <subcommand> [...]
+```
+
+Le format de sortie est contrôlé par sous-commande via `--format <text|json>` (et non le flag partagé `--json`).
+
+`image generate` accepte :
+
+| Flag | Short | Description | Default |
+|:-----|:------|:------------|:--------|
+| `--vendor <name>` | | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all`. `auto` se résout à partir de `image-config.yaml` et de l'authentification disponible. | `auto` |
+| `--size <size>` | | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto`. | défaut du fournisseur |
+| `--quality <level>` | | `low` \| `medium` \| `high` \| `auto`. | défaut du fournisseur |
+| `--count <n>` | `-n` | Nombre d'images, 1..5. | `1` |
+| `--out <dir>` | | Répertoire de sortie. Doit être à l'intérieur de `$PWD` sauf si `--allow-external-out` est défini. | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | | Autorise les chemins `--out` hors de `$PWD`. | `false` |
+| `--model <name>` | | Surcharge de modèle spécifique au fournisseur (par exemple `gpt-image-2`, `flux`, `imagen-4`). | défaut du fournisseur |
+| `--strategy <list>` | | Ordre de fallback Gemini, séparé par des virgules parmi `mcp`, `stream`, `api`. | défaut du fournisseur |
+| `--timeout <seconds>` | | Timeout par image. | défaut du fournisseur |
+| `--reference <path>` | `-r` | Image de référence pour le transfert de style/sujet. Répétable (`-r a.png -r b.png`) ou séparée par virgules. Validée en taille (≤ 5 Mo), format (PNG/JPEG/GIF/WebP via magic bytes) et nombre (≤ 10). Pris en charge sur `codex` (passe `-i` à `codex exec`) et `gemini` (inline base64 `inlineData`). Rejeté avec exit 4 sur `pollinations`. | |
+| `--yes` | `-y` | Saute la confirmation de coût. | `false` |
+| `--no-prompt-in-manifest` | | Stocke le SHA256 du prompt au lieu du texte brut dans `manifest.json`. | `false` |
+| `--dry-run` | | Affiche le plan et l'estimation de coût ; n'exécute pas. | `false` |
+| `--format <format>` | | `text` \| `json`. | `text` |
+
+`image doctor` et `image list-vendors` n'acceptent que `--format <text|json>`.
 
 ### memory:init
 

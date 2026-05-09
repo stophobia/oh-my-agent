@@ -148,8 +148,7 @@ oma agent:spawn qa "Review notification feature across all platforms" session-no
 | `/orchestrate` | Trwały | Automatyczne równoległe wykonanie agentów z monitoringiem i pętlami weryfikacji | Duże projekty wymagające maksymalnej równoległości |
 | `/work` | Trwały | Krokowa koordynacja wielodomenowa z zatwierdzeniem użytkownika | Funkcjonalności obejmujące wielu agentów z kontrolą |
 | `/ultrawork` | Trwały | 5-fazowy, 17-krokowy workflow jakości z 11 punktami kontrolnymi | Maksymalna jakość dostarczenia, kod krytyczny dla produkcji |
-| `/plan` | Nietrwały | Rozkład zadań sterowany przez PM i definicja kontraktów API | Przed złożoną pracą wieloagentową |
-| `/exec-plan` | Nietrwały | Tworzenie i śledzenie planów wykonawczych jako artefaktów repozytorium | Złożone funkcjonalności wymagające śledzonego postępu |
+| `/plan` | Nietrwały | Rozkład zadań sterowany przez PM, kontrakty API oraz śledzone artefakty planu w `docs/plans/work/` (sekwencyjne `NNN-name.md`, pole Status dla cyklu życia) | Przed złożoną pracą wieloagentową; złożone funkcjonalności wymagające śledzonego postępu i dzienników decyzji |
 | `/brainstorm` | Nietrwały | Ideacja z priorytetem projektowania z 2-3 propozycjami podejść | Przed zobowiązaniem się do podejścia implementacyjnego |
 | `/deepinit` | Nietrwały | Pełna inicjalizacja projektu — AGENTS.md, ARCHITECTURE.md, docs/ | Konfiguracja oh-my-agent w istniejącej bazie kodu |
 | `/review` | Nietrwały | Pipeline QA: bezpieczeństwo OWASP, wydajność, dostępność, jakość kodu | Przed mergowaniem kodu, przegląd przedwdrożeniowy |
@@ -190,7 +189,7 @@ oh-my-agent wykrywa słowa kluczowe workflow w 11 językach:
 6. **Zacznij od `/work` gdy nie masz pewności.** Prowadzi krok po kroku.
 7. **Używaj `/brainstorm` przed `/plan` dla niejasnych pomysłów.**
 8. **Uruchom `/deepinit` na nowych bazach kodu.** Tworzy AGENTS.md i ARCHITECTURE.md.
-9. **Skonfiguruj mapowanie agent-CLI.** Kieruj złożone rozumowanie do Claude, szybkie generowanie do Gemini.
+9. **Skonfiguruj `model_preset`.** Użyj `claude-only`, `gemini-only` lub `antigravity`, aby kierować agentów do właściwego CLI. Dodaj nadpisania w sekcji `agents:` dla precyzyjnej kontroli. Zobacz [Modele per agent](./per-agent-models.md).
 10. **Używaj `/ultrawork` dla kodu krytycznego dla produkcji.**
 
 ---

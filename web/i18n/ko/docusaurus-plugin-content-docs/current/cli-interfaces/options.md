@@ -69,10 +69,34 @@ oma retro    # JSON 출력
 | `verify` | 예 | 예 | 검사별 검증 결과 |
 | `visualize` | 예 | 예 | JSON 형태의 의존성 그래프 |
 | `describe` | 항상 JSON | 해당 없음 | 항상 JSON 출력 (인트로스펙션 명령) |
+| `recap` | 예 | 예 | 도구/세션별 대화 이력 |
+| `export` | 예 | 예 | 내보내기 상태와 대상 경로 |
+| `image generate` / `image doctor` / `image list-vendors` | `--format json` | 해당 없음 | `--json` 대신 `--format json`을 사용합니다 |
+| `search ...` | 항상 JSON | 해당 없음 | 모든 `search` 서브커맨드는 JSON으로 스트리밍합니다. 사람이 읽기 좋게 보려면 `--pretty`를 사용하세요 |
 
 ---
 
 ## 명령별 옵션
+
+### oma (설치)
+
+```
+oma
+```
+
+플래그가 없습니다. 대화형 설치 마법사가 프리셋 선택을 요청한 뒤 `model_preset`을 `.agents/oma-config.yaml`에 기록합니다.
+
+### doctor
+
+```
+oma doctor [--json] [--output <format>] [--profile]
+```
+
+| 플래그 | 설명 | 기본값 |
+|:-------|:-----|:-------|
+| `--json` | 형식이 지정된 텍스트 대신 JSON으로 출력합니다. | `false` |
+| `--output <format>` | 출력 형식을 명시적으로 지정합니다 (`text` 또는 `json`). [출력 옵션](#출력-옵션) 참조. | `text` |
+| `--profile` | 프로필 헬스 매트릭스를 표시합니다. 활성화된 `model_preset`과 `agents:` 오버라이드를 기준으로 에이전트별 해석된 모델 슬러그, CLI, 인증 상태를 보여줍니다. [에이전트별 모델](../guide/per-agent-models.md) 참조. | `false` |
 
 ### update
 
@@ -208,6 +232,84 @@ tasks:
   - agent: frontend
     task: "Build user dashboard"
 ```
+
+### recap
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+| 플래그 | 설명 | 기본값 |
+|:-------|:-----|:-------|
+| `--window <period>` | 시간 범위. `1d`, `3d`, `7d`, `2w`, `30d` 중 하나입니다. `--date`가 설정되면 무시됩니다. | `1d` |
+| `--date <date>` | 특정 날짜 (`YYYY-MM-DD`). `--window`보다 우선합니다. | |
+| `--tool <tools>` | 도구별로 세션을 필터링합니다. 쉼표로 구분: `claude`, `codex`, `gemini`, `qwen`, `cursor`. | 모든 도구 |
+| `--top <n>` | 요약에서 상위 N개의 프로젝트/주제만 표시합니다. | 무제한 |
+| `--sort <metric>` | 세션을 `count` 또는 `duration` 기준으로 정렬합니다. | `count` |
+| `--mermaid` | 기본 요약 대신 Mermaid Gantt 차트를 출력합니다. | `false` |
+| `--graph` | 브라우저에서 인터랙티브 그래프를 엽니다. `--mermaid`와 상호 배타적입니다. | `false` |
+
+### export
+
+```
+oma export <format> [-d <path>] [--json] [--output <format>]
+```
+
+| 플래그 | 축약 | 설명 | 기본값 |
+|:-------|:-----|:-----|:-------|
+| `--dir <path>` | `-d` | 내보낸 규칙을 기록할 대상 디렉토리. | `process.cwd()` |
+
+**지원 형식:** `cursor` (설치된 스킬에서 파생된 `.cursor/rules` 파일을 기록합니다).
+
+### search
+
+```
+oma search <subcommand> [...]
+```
+
+`search` 그룹은 자체 JSON 출력을 사용합니다 (`--json` / `--output` 플래그 없음). URL/쿼리 서브커맨드에서 `--pretty`를 사용하면 결과를 가독성 있게 출력하며, 서브커맨드별 옵션은 다음과 같습니다.
+
+| 서브커맨드 | 주요 옵션 |
+|:-----------|:---------|
+| `fetch <url>` | `--only`, `--skip`, `--include-archive`, `--timeout`, `--locale`, `--pretty` |
+| `api <url>` / `meta <url>` / `rss <url>` / `archive <url>` | `--timeout`, `--locale`, `--pretty` |
+| `api:search <query>` | `--platforms <list>`, `--timeout`, `--locale`, `--pretty` |
+| `rss:google <query>` | `--locale` (기본값 `en-US`) |
+| `media <url>` | `--subs`, `--sub-lang <list>` (기본값 `en`), `--format <spec>`, `--timeout` (기본값 `30`), `--pretty` |
+| `code <query>` | `--host <github\|gitlab>` (기본값 `github`), `--language`, `--repo`, `--limit` (기본값 `20`), `--pretty` |
+| `trust <domain>` | `--pretty` |
+| `doctor` | 없음. Chrome / `python3 curl_cffi` / `yt-dlp` / `gh` 바이너리 점검을 실행합니다 |
+
+**종료 코드:** `0` ok, `1` error, `2` blocked, `3` not-found, `4` invalid-input, `5` auth-required, `6` timeout. 스크립트에서 일시적 차단과 잘못된 입력을 구분할 때 활용하세요.
+
+### image
+
+```
+oma image <subcommand> [...]
+```
+
+출력 형식은 공유 `--json` 플래그가 아니라 서브커맨드별 `--format <text|json>`으로 제어합니다.
+
+`image generate`가 받는 옵션입니다.
+
+| 플래그 | 축약 | 설명 | 기본값 |
+|:-------|:-----|:-----|:-------|
+| `--vendor <name>` | | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all`. `auto`는 `image-config.yaml`과 사용 가능한 인증을 기반으로 결정합니다. | `auto` |
+| `--size <size>` | | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto`. | 벤더 기본값 |
+| `--quality <level>` | | `low` \| `medium` \| `high` \| `auto`. | 벤더 기본값 |
+| `--count <n>` | `-n` | 이미지 개수, 1..5. | `1` |
+| `--out <dir>` | | 출력 디렉토리. `--allow-external-out`이 설정되지 않으면 `$PWD` 내부에 있어야 합니다. | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | | `--out` 경로가 `$PWD` 외부에 있는 것을 허용합니다. | `false` |
+| `--model <name>` | | 벤더별 모델 오버라이드 (예: `gpt-image-2`, `flux`, `imagen-4`). | 벤더 기본값 |
+| `--strategy <list>` | | Gemini 폴백 순서. `mcp`, `stream`, `api`를 쉼표로 구분합니다. | 벤더 기본값 |
+| `--timeout <seconds>` | | 이미지당 타임아웃. | 벤더 기본값 |
+| `--reference <path>` | `-r` | 스타일/주제 전이를 위한 레퍼런스 이미지. 반복 지정(`-r a.png -r b.png`) 또는 쉼표 구분이 가능합니다. 크기(≤5MB), 형식(매직 바이트로 PNG/JPEG/GIF/WebP 검증), 개수(≤10)를 검증합니다. `codex`(`codex exec`에 `-i` 전달)와 `gemini`(`inlineData`로 base64 인라인)에서 지원하며, `pollinations`에서는 종료 코드 4로 거부됩니다. | |
+| `--yes` | `-y` | 비용 확인 프롬프트를 건너뜁니다. | `false` |
+| `--no-prompt-in-manifest` | | `manifest.json`에 원문 대신 프롬프트의 SHA256을 저장합니다. | `false` |
+| `--dry-run` | | 계획과 비용 추정치만 출력하고 실행하지 않습니다. | `false` |
+| `--format <format>` | | `text` \| `json`. | `text` |
+
+`image doctor`와 `image list-vendors`는 `--format <text|json>`만 받습니다.
 
 ### memory:init
 

@@ -109,8 +109,7 @@ Tapez-les dans votre IDE IA pour declencher des processus structures :
 | Commande | Ce Qu'elle Fait | Quand L'utiliser |
 |----------|-----------------|------------------|
 | `/brainstorm` | Ideation libre et exploration | Avant de s'engager dans une approche |
-| `/plan` | Decomposition PM → `.agents/results/plan-{sessionId}.json` | Avant de demarrer toute fonctionnalite complexe |
-| `/exec-plan` | Executer un plan existant etape par etape | Apres `/plan` |
+| `/plan` | Decomposition PM, contrats d'API et artefacts de plan suivis dans `docs/plans/work/` (`NNN-name.md` sequentiels, champ Status pour le cycle de vie) | Avant toute fonctionnalite complexe ; fonctionnalites complexes necessitant un suivi de progression et des journaux de decisions |
 | `/work` | Coordination multi-domaine etape par etape | Fonctionnalites couvrant plusieurs agents |
 | `/orchestrate` | Execution automatisee d'agents en parallele | Grands projets, parallelisme maximum |
 | `/ultrawork` | Workflow qualite 5 phases (11 portes de revue) | Livraison qualite maximum |

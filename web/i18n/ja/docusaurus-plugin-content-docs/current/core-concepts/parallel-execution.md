@@ -106,38 +106,34 @@ oma agent:parallel -i \
 
 ## マルチCLI設定
 
+oh-my-agentは`.agents/oma-config.yaml`の`model_preset`を介して、各エージェントを適切なCLIにルーティングします。利用するベンダー向けのビルトインプリセットを選び、必要に応じて個別エージェントをオーバーライドします。
+
+### 設定例
+
 ```yaml
 # .agents/oma-config.yaml
 language: en
-date_format: "YYYY-MM-DD"
-timezone: "Asia/Seoul"
-default_cli: gemini
+model_preset: antigravity   # ミックス: QA/PMはClaude、実装はCodex、検索はGemini
 
-model_preset (per-agent overrides via `agents:`):
-  frontend: claude       # 複雑なUI推論
-  backend: gemini        # 高速APIスキャフォールディング
-  mobile: gemini         # 高速Flutterコード生成
-  db: gemini             # 迅速なスキーマ設計
-  pm: gemini             # 迅速なタスク分解
-  qa: claude             # 徹底的なセキュリティレビュー
-  debug: claude          # 深い根本原因分析
-  design: claude         # 繊細なデザイン判断
-  tf-infra: gemini       # HCL生成
-  dev-workflow: gemini   # タスクランナー設定
-  translator: claude     # 文化的感受性を伴う翻訳
-  orchestrator: gemini   # 高速協調
-  commit: gemini         # コミットメッセージ生成
+# プリセットの上に特定のエージェントをオーバーライド
+agents:
+  frontend: { model: anthropic/claude-sonnet-4-6 }
+  backend:  { model: openai/gpt-5.5, effort: high }
 ```
 
+ビルトインプリセット：`claude-only`、`codex-only`、`gemini-only`、`qwen-only`、`antigravity`。詳細は[エージェント別モデル](../guide/per-agent-models.md)を参照してください。
+
 ### ベンダー解決の優先順位
+
+`oma agent:spawn`がどのCLIを使うかを決定する際の優先順位は以下のとおりです。
 
 | 優先度 | ソース | 例 |
 |----------|--------|---------|
 | 1（最高） | `--model`フラグ | `oma agent:spawn backend "task" session-01 -m claude` |
-| 2 | `model_preset (per-agent overrides via `agents:`)` | oma-config.yamlの設定 |
-| 3 | `default_cli` | oma-config.yamlの設定 |
-| 4 | `active_vendor` | レガシー`cli-config.yaml` |
-| 5（最低） | ハードコード | `gemini` |
+| 2 | `oma-config.yaml`の`agents:`オーバーライド | `agents: { backend: { model: openai/gpt-5.5 } }` |
+| 3 | アクティブな`model_preset`のエージェントデフォルト | エージェントロールに対するプリセット参照 |
+
+`--model`フラグが常に優先されます。フラグが指定されない場合は、`agents:`オーバーライド、続いてプリセットデフォルトの順に確認します。
 
 ---
 

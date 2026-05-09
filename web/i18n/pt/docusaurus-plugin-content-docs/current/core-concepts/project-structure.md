@@ -14,8 +14,7 @@ Após instalar o oh-my-agent, seu projeto ganha três árvores de diretórios: `
 ```
 your-project/
 ├── .agents/                          ← Única Fonte de Verdade (SSOT)
-│   ├── config/
-│   │   └── oma-config.yaml    ← Idioma, fuso horário, mapeamento CLI
+│   ├── oma-config.yaml           ← Idioma, model_preset, overrides de agente
 │   │
 │   ├── skills/
 │   │   ├── _shared/                  ← Recursos usados por TODOS os agentes
@@ -74,14 +73,143 @@ your-project/
 │   │   │       ├── snippets.md
 │   │   │       └── api-template.*
 │   │   │
-│   │   └── ...                        ← Outros diretórios de skills
+│   │   ├── oma-mobile/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── execution-protocol.md
+│   │   │       ├── tech-stack.md
+│   │   │       ├── snippets.md
+│   │   │       ├── screen-template.dart
+│   │   │       ├── checklist.md
+│   │   │       ├── error-playbook.md
+│   │   │       └── examples.md
+│   │   │
+│   │   ├── oma-db/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── execution-protocol.md
+│   │   │       ├── document-templates.md
+│   │   │       ├── anti-patterns.md
+│   │   │       ├── vector-db.md
+│   │   │       ├── iso-controls.md
+│   │   │       ├── checklist.md
+│   │   │       ├── error-playbook.md
+│   │   │       └── examples.md
+│   │   │
+│   │   ├── oma-design/
+│   │   │   ├── SKILL.md
+│   │   │   ├── resources/
+│   │   │   │   ├── execution-protocol.md
+│   │   │   │   ├── anti-patterns.md
+│   │   │   │   ├── checklist.md
+│   │   │   │   ├── design-md-spec.md
+│   │   │   │   ├── design-tokens.md
+│   │   │   │   ├── prompt-enhancement.md
+│   │   │   │   ├── stitch-integration.md
+│   │   │   │   └── error-playbook.md
+│   │   │   ├── reference/
+│   │   │   │   ├── typography.md
+│   │   │   │   ├── color-and-contrast.md
+│   │   │   │   ├── spatial-design.md
+│   │   │   │   ├── motion-design.md
+│   │   │   │   ├── responsive-design.md
+│   │   │   │   ├── component-patterns.md
+│   │   │   │   ├── accessibility.md
+│   │   │   │   └── shader-and-3d.md
+│   │   │   └── examples/
+│   │   │       ├── design-context-example.md
+│   │   │       └── landing-page-prompt.md
+│   │   │
+│   │   ├── oma-pm/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── execution-protocol.md
+│   │   │       ├── examples.md
+│   │   │       ├── iso-planning.md
+│   │   │       ├── task-template.json
+│   │   │       └── error-playbook.md
+│   │   │
+│   │   ├── oma-qa/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── execution-protocol.md
+│   │   │       ├── iso-quality.md
+│   │   │       ├── checklist.md
+│   │   │       ├── self-check.md
+│   │   │       ├── error-playbook.md
+│   │   │       └── examples.md
+│   │   │
+│   │   ├── oma-debug/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── execution-protocol.md
+│   │   │       ├── common-patterns.md
+│   │   │       ├── debugging-checklist.md
+│   │   │       ├── bug-report-template.md
+│   │   │       ├── error-playbook.md
+│   │   │       └── examples.md
+│   │   │
+│   │   ├── oma-tf-infra/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── execution-protocol.md
+│   │   │       ├── multi-cloud-examples.md
+│   │   │       ├── cost-optimization.md
+│   │   │       ├── policy-testing-examples.md
+│   │   │       ├── iso-42001-infra.md
+│   │   │       ├── checklist.md
+│   │   │       ├── error-playbook.md
+│   │   │       └── examples.md
+│   │   │
+│   │   ├── oma-dev-workflow/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── validation-pipeline.md
+│   │   │       ├── database-patterns.md
+│   │   │       ├── api-workflows.md
+│   │   │       ├── i18n-patterns.md
+│   │   │       ├── release-coordination.md
+│   │   │       └── troubleshooting.md
+│   │   │
+│   │   ├── oma-translator/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       ├── translation-rubric.md
+│   │   │       └── anti-ai-patterns.md
+│   │   │
+│   │   ├── oma-orchestrator/
+│   │   │   ├── SKILL.md
+│   │   │   ├── resources/
+│   │   │   │   ├── subagent-prompt-template.md
+│   │   │   │   └── memory-schema.md
+│   │   │   ├── scripts/
+│   │   │   │   ├── spawn-agent.sh
+│   │   │   │   ├── parallel-run.sh
+│   │   │   │   └── verify.sh
+│   │   │   ├── templates/
+│   │   │   └── config/
+│   │   │       └── cli-config.yaml
+│   │   │
+│   │   ├── oma-brainstorm/
+│   │   │   └── SKILL.md
+│   │   │
+│   │   ├── oma-coordination/
+│   │   │   ├── SKILL.md
+│   │   │   └── resources/
+│   │   │       └── examples.md
+│   │   │
+│   │   └── oma-scm/
+│   │       ├── SKILL.md
+│   │       ├── config/
+│   │       │   └── commit-config.yaml
+│   │       └── resources/
+│   │           └── conventional-commits.md
 │   │
 │   ├── workflows/
 │   │   ├── orchestrate.md             ← Persistente: execução paralela automatizada
 │   │   ├── work.md             ← Persistente: coordenação passo a passo
 │   │   ├── ultrawork.md              ← Persistente: workflow de qualidade em 5 fases
-│   │   ├── plan.md                   ← Breakdown de tarefas PM
-│   │   ├── exec-plan.md              ← Gerenciamento de plano de execução
+│   │   ├── plan.md                   ← Breakdown de tarefas PM + artefatos de tracker de plano
 │   │   ├── brainstorm.md             ← Ideação orientada por design
 │   │   ├── deepinit.md               ← Inicialização de projeto
 │   │   ├── review.md                 ← Pipeline de revisão QA
@@ -102,7 +230,11 @@ your-project/
 │   │
 │   ├── results/plan-{sessionId}.json                      ← Saída de plano gerado (populado por /plan)
 │   ├── state/                         ← Arquivos de estado de workflow ativos
+│   │   ├── orchestrate-state.json     ← (existe apenas quando o workflow está ativo)
+│   │   ├── ultrawork-state.json
+│   │   └── work-state.json
 │   ├── results/                       ← Arquivos de resultado dos agentes
+│   │   └── result-{agent}.md          ← (criado por agentes finalizados)
 │   └── mcp.json                       ← Configuração do servidor MCP
 │
 ├── .claude/                           ← Camada de Integração com IDE
@@ -129,6 +261,9 @@ your-project/
         ├── result-{agent}.md          ← Saídas finais por agente
         ├── session-metrics.md         ← Rastreamento de Dívida de Clarificação e Quality Score
         ├── experiment-ledger.md       ← Rastreamento de experimentos (condicional)
+        ├── session-work.md      ← Estado de sessão do workflow Work
+        ├── session-ultrawork.md       ← Estado de sessão do workflow Ultrawork
+        ├── tool-overrides.md          ← Restrições temporárias de ferramentas (/tools --temp)
         └── archive/
             └── metrics-{date}.md      ← Métricas de sessão arquivadas
 ```
@@ -145,8 +280,10 @@ Este é o diretório central. Tudo que os agentes precisam reside aqui. É o ún
 - `language`: Código do idioma de resposta (en, ko, ja, zh, es, fr, de, pt, ru, nl, pl)
 - `date_format`: Formato de timestamp (padrão: `YYYY-MM-DD`)
 - `timezone`: Identificador de fuso horário (padrão: `UTC`)
-- `default_cli`: Vendor CLI de fallback (gemini, claude, codex, qwen)
-- `model_preset (per-agent overrides via `agents:`)`: Sobrescritas de roteamento CLI por agente
+- `model_preset`: Chave do model preset ativo (built-in ou customizado)
+- `agents`: Overrides opcionais por agente (`AgentSpec` apenas como objeto)
+- `models`: Slugs de modelo opcionais definidos pelo usuário
+- `custom_presets`: Presets opcionais definidos pelo usuário com `extends:` opcional
 
 ### skills/
 
@@ -160,7 +297,7 @@ Onde a expertise dos agentes reside. 22 diretórios no total: 21 skills de agent
 **`oma-{agent}/`** — Diretórios de skill por agente. Cada um contém:
 - `SKILL.md` (~800 bytes) — Camada 1: sempre carregado. Identidade, roteamento, regras principais.
 - `resources/` — Camada 2: sob demanda. Protocolos de execução, exemplos, checklists, playbooks de erros, stacks tecnológicos, snippets, templates.
-- Alguns agentes têm subdiretórios adicionais: `stack/` (oma-backend), `reference/` (oma-design), `examples/` (oma-design), `scripts/` (oma-orchestrator), `config/` (oma-orchestrator, oma-scm).
+- Alguns agentes têm subdiretórios adicionais: `stack/` (oma-backend, gerado por /stack-set), `reference/` (oma-design), `examples/` (oma-design), `scripts/` (oma-orchestrator), `config/` (oma-orchestrator, oma-scm).
 
 ### workflows/
 
@@ -171,19 +308,22 @@ Onde a expertise dos agentes reside. 22 diretórios no total: 21 skills de agent
 - Protocolo de execução passo a passo
 - Definições de portão (para workflows persistentes)
 
+Workflows persistentes: `orchestrate.md`, `work.md`, `ultrawork.md`.
+Não persistentes: `plan.md`, `brainstorm.md`, `deepinit.md`, `review.md`, `debug.md`, `design.md`, `scm.md`, `tools.md`, `stack-set.md`.
+
 ### agents/
 
 7 arquivos de definição de subagentes usados ao spawnar agentes via Task tool (Claude Code) ou CLI. Cada arquivo define:
 - Frontmatter: `name`, `description`, `skills` (qual skill carregar)
 - Referência ao protocolo de execução
-- Template CHARTER_CHECK
+- Template de charter preflight (CHARTER_CHECK)
 - Resumo de arquitetura
 - Regras específicas de domínio (10 regras)
 - Declaração: "Nunca modificar arquivos de `.agents/`"
 
 ### plan-\{sessionId\}.json
 
-Gerado pelo workflow `/plan`. Contém o breakdown estruturado de tarefas com atribuições de agentes, prioridades, dependências e critérios de aceitação. Consumido por `/orchestrate`, `/work` e `/exec-plan`.
+Gerado pelo workflow `/plan`. Contém o breakdown estruturado de tarefas com atribuições de agentes, prioridades, dependências e critérios de aceitação. Consumido por `/orchestrate` e `/work`. O tracker legível por humanos correspondente fica em `docs/plans/work/{NNN}-{name}.md` (ciclo de vida via o campo `Status`). Referências de design permanentes ficam ao lado em `docs/plans/designs/{NNN}-{name}.md`.
 
 ### state/
 
@@ -191,7 +331,7 @@ Arquivos de estado de workflow ativo para workflows persistentes. Esses arquivos
 
 ### results/
 
-Arquivos de resultado dos agentes. Criados por agentes completados com status (completed/failed), resumo, arquivos alterados e checklist de critérios de aceitação.
+Arquivos de resultado dos agentes. Criados por agentes completados com status (completed/failed), resumo, arquivos alterados e checklist de critérios de aceitação. Lidos pelo orquestrador durante a coleta e pelos dashboards para monitoramento.
 
 ### mcp.json
 
@@ -240,7 +380,7 @@ Symlinks apontando para `.agents/skills/`. Isso torna as skills visíveis para I
 
 ### agents/
 
-Definições de subagentes formatadas para a ferramenta Agent do Claude Code.
+Definições de subagentes formatadas para a ferramenta Agent do Claude Code. Estas referenciam os arquivos de skill e incluem o template CHARTER_CHECK.
 
 ---
 
@@ -256,6 +396,8 @@ Onde agentes escrevem seu progresso durante sessões de orquestração. Este dir
 | `result-{agent}.md` | Aquele agente | Saída final: status de conclusão, resumo, arquivos alterados, critérios de aceitação |
 | `session-metrics.md` | Orquestrador | Eventos de Dívida de Clarificação, progressão de Quality Score |
 | `experiment-ledger.md` | Orquestrador/QA | Linhas de experimento quando Quality Score está ativo |
+| `session-work.md` | Workflow Work | Estado de sessão específico do Work |
+| `session-ultrawork.md` | Workflow Ultrawork | Rastreamento de fases específico do Ultrawork |
 | `tool-overrides.md` | Workflow /tools | Restrições temporárias de ferramentas (escopo da sessão) |
 | `archive/metrics-{date}.md` | Sistema | Métricas de sessão arquivadas (retenção de 30 dias) |
 
@@ -273,9 +415,9 @@ oh-my-agent/
 │   ├── src/              ← Código fonte
 │   ├── package.json
 │   └── install.sh        ← Instalador bootstrap
-├── web/                  ← Site de documentação (Next.js)
-│   └── content/
-│       └── en/           ← Páginas de documentação em inglês
+├── web/                  ← Site de documentação (Docusaurus)
+│   ├── docs/             ← Páginas de documentação em inglês (locale base)
+│   └── i18n/             ← Páginas de documentação traduzidas
 ├── action/               ← GitHub Action para atualizações automatizadas de skills
 ├── docs/                 ← READMEs traduzidos e especificações
 ├── .agents/              ← EDITÁVEL no repo fonte (este É o código fonte)
@@ -287,8 +429,9 @@ oh-my-agent/
 
 No repo fonte, modificações em `.agents/` são permitidas (esta é a exceção SSOT para o repo fonte em si). As regras de `.agents/` sobre não modificar este diretório aplicam-se a projetos consumidores, não ao repositório oh-my-agent.
 
-Comandos de desenvolvimento:
+Comandos de desenvolvimento (executados a partir da raiz do repositório):
 - `bun run test` — Testes CLI (vitest)
-- `bun run lint` — Lint
+- `bun run lint` — Lint dos workspaces CLI e web
 - `bun run build` — Build CLI
+- `bun run typecheck` — Type-check de CLI e web
 - Commits devem seguir formato de commit convencional (commitlint aplicado)

@@ -140,8 +140,7 @@ oma agent:spawn qa "Review notification feature across all platforms" session-no
 | `/orchestrate` | Persistent | Geautomatiseerde parallelle agentuitvoering met monitoring | Grote projecten met maximale parallelisme |
 | `/work` | Persistent | Stap-voor-stap multi-domeincoordinatie met gebruikersgoedkeuring | Functies die meerdere agenten beslaan |
 | `/ultrawork` | Persistent | 5-fasen, 17-stappen kwaliteitsworkflow met 11 reviewcheckpoints | Maximale kwaliteitslevering |
-| `/plan` | Niet-persistent | PM-gedreven taakopsplitsing en API-contractdefinitie | Voor complex multi-agent werk |
-| `/exec-plan` | Niet-persistent | Uitvoeringsplannen als repository-artefacten | Complexe functies met bijgehouden voortgang |
+| `/plan` | Niet-persistent | PM-gedreven taakopsplitsing, API-contracten en bijgehouden planartefacten in `docs/plans/work/` (sequentieel `NNN-name.md`, Status-veld voor lifecycle) | Voor complex multi-agent werk; complexe functies met bijgehouden voortgang en beslissingslogs |
 | `/brainstorm` | Niet-persistent | Design-first ideevorming met 2-3 benaderingsvoorstellen | Voor het vastleggen van een implementatiebenadering |
 | `/deepinit` | Niet-persistent | Volledige projectinitialisatie | oh-my-agent instellen in bestaande codebase |
 | `/review` | Niet-persistent | QA-pipeline: OWASP, prestaties, toegankelijkheid, codekwaliteit | Voor het mergen van code |
@@ -175,7 +174,7 @@ oma agent:spawn qa "Review notification feature across all platforms" session-no
 
 | Skill | Geschikt Voor | Primaire Uitvoer |
 |-------|-------------|------------------|
-| **oma-brainstorm** | "Ik heb een idee", benaderingen verkennen | Ontwerpdocument in `docs/plans/` |
+| **oma-brainstorm** | "Ik heb een idee", benaderingen verkennen | Ontwerpdocument in `docs/plans/designs/` |
 | **oma-pm** | "plan dit", taakopsplitsing | `.agents/results/plan-{sessionId}.json`, `task-board.md` |
 | **oma-frontend** | UI-componenten, formulieren, pagina's, styling | React/TypeScript-componenten, Vitest-tests |
 | **oma-backend** | API's, auth, serverlogica, migraties | Endpoints, models, services, tests |
@@ -202,7 +201,7 @@ oma agent:spawn qa "Review notification feature across all platforms" session-no
 6. **Begin met `/work` bij twijfel.**
 7. **Gebruik `/brainstorm` voor `/plan` bij dubbelzinnige ideeen.**
 8. **Draai `/deepinit` op nieuwe codebases.**
-9. **Configureer agent-CLI mapping.** Routeer complexe taken naar Claude, snelle naar Gemini.
+9. **Configureer `model_preset`.** Gebruik `claude-only`, `gemini-only` of `antigravity` om agenten naar de juiste CLI te routeren. Voeg `agents:` overrides toe voor fijnmazige controle. Zie [Per-Agent Models](./per-agent-models.md).
 10. **Gebruik `/ultrawork` voor productiekritieke code.**
 
 ---

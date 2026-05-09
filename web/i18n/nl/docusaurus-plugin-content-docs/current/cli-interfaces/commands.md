@@ -72,6 +72,37 @@ oma stats [--json] [--output <format>] [--reset]
 
 Productiviteitsmetrieken: sessieaantal, gebruikte skills, voltooide taken, sessietijd, bestandswijzigingen.
 
+### recap
+
+Recap van AI-tool conversatiegeschiedenis over Claude-, Codex-, Gemini-, Qwen- en Cursor-sessies.
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+**Opties:**
+
+| Vlag | Beschrijving | Standaard |
+|:-----|:-----------|:--------|
+| `--window <period>` | Tijdvenster: `1d`, `3d`, `7d`, `2w`, `30d` | `1d` |
+| `--date <date>` | Specifieke datum (`YYYY-MM-DD`); heeft voorrang op `--window` | |
+| `--tool <tools>` | Komma-gescheiden filter: `claude,codex,gemini,qwen,cursor` | alle |
+| `--top <n>` | Toon top N projecten/onderwerpen | |
+| `--sort <metric>` | Sorteer op `count` of `duration` | `count` |
+| `--mermaid` | Uitvoer als Mermaid Gantt-grafiek | |
+| `--graph` | Open interactieve grafiek in de browser | |
+| `--json` / `--output <format>` | Machineleesbare uitvoer | `text` |
+
+**Voorbeelden:**
+
+```bash
+oma recap                                     # Vandaag (1d)
+oma recap --window 7d                         # Afgelopen week
+oma recap --date 2026-04-20 --tool claude,codex
+oma recap --window 7d --mermaid > week.mmd
+oma recap --window 30d --graph                # Interactieve browsergrafiek
+```
+
 ### retro
 
 ```
@@ -208,6 +239,152 @@ oma visualize [--json]
 oma viz [--json]
 ```
 Afhankelijkheidsgrafiek van projectstructuur.
+
+### search
+
+Mechanische zoekprimitieven — fetch, metadata, RSS, media, code en trust scoring. Alias `oma s`. Alle subcommando's geven JSON naar stdout (een object per regel, of pretty-printed met `--pretty`).
+
+```
+oma search <subcommand> ...
+oma s <subcommand> ...
+```
+
+**Subcommando's:**
+
+| Subcommando | Doel |
+|:-----------|:--------|
+| `fetch <url>` | Haal URL op via auto-escalerende strategiepijplijn (api → probe → impersonate → browser → archive) |
+| `api <url>` | Haal op via gematchte platform-API-handler (Phase 0) |
+| `api:search <query>` | Fan-out trefwoordzoekopdracht over platforms die dit ondersteunen (`--platforms <list>`) |
+| `meta <url>` | Extraheer OGP / JSON-LD / Schema.org metadata |
+| `rss <url>` | Ontdek en parseer RSS- / Atom-feed |
+| `rss:google <query>` | Bouw een Google News RSS-URL voor een query |
+| `media <url>` | Extraheer mediametadata via `yt-dlp` (1858 sites) |
+| `archive <url>` | Haal op via AMP / archive.today / Wayback fallback |
+| `trust <domain>` | Resolveer trust-niveau / score voor een domein |
+| `code <query>` | Zoek code via `gh` (GitHub) of `glab` (GitLab) |
+| `doctor` | Controleer afhankelijkheden (Chrome, `python3` + `curl_cffi`, `yt-dlp`, `gh`) |
+
+**Veelvoorkomende opties op URL-/query-subcommando's:**
+
+| Vlag | Beschrijving | Standaard |
+|:-----|:-----------|:--------|
+| `--timeout <seconds>` | Timeout per strategie | `15` (`30` voor `media`) |
+| `--locale <value>` | `Accept-Language`-header | `en-US,en;q=0.9` |
+| `--pretty` | Pretty-print JSON-uitvoer | `false` |
+
+**`fetch` extra's:**
+
+| Vlag | Beschrijving |
+|:-----|:-----------|
+| `--only <strategies>` | Komma-gescheiden strategieen om te draaien (`api,probe,impersonate,browser,archive`) |
+| `--skip <strategies>` | Komma-gescheiden strategieen om over te slaan |
+| `--include-archive` | Voeg archiefstrategie toe als laatste fallback |
+
+**`media` extra's:**
+
+| Vlag | Beschrijving |
+|:-----|:-----------|
+| `--subs` | Schrijf ondertitels |
+| `--sub-lang <list>` | Ondertiteltalen, komma-gescheiden (standaard: `en`) |
+| `--format <spec>` | yt-dlp formaat-spec |
+
+**`code` extra's:**
+
+| Vlag | Beschrijving | Standaard |
+|:-----|:-----------|:--------|
+| `--host <github\|gitlab>` | Host | `github` |
+| `--language <lang>` | Taalfilter | |
+| `--repo <owner/repo>` | Beperk tot een repo | |
+| `--limit <n>` | Maximaal aantal resultaten | `20` |
+
+**Exitcodes:** `0` ok, `1` error, `2` blocked, `3` not-found, `4` invalid-input, `5` auth-required, `6` timeout.
+
+**Voorbeelden:**
+
+```bash
+# Auto-escalerende fetch
+oma search fetch https://example.com/article --pretty
+
+# Forceer een enkele strategie
+oma search fetch https://example.com --only browser
+
+# Cross-platform trefwoordzoekopdracht via API-handlers
+oma search api:search "RAG patterns" --platforms hackernews,reddit
+
+# Vind de trust-score van een repo
+oma search trust github.com
+
+# Code zoeken (standaard GitHub)
+oma search code "useEffect cleanup" --language ts --limit 10
+
+# Verifieer je lokale afhankelijkheden
+oma search doctor
+```
+
+### image
+
+Multi-vendor AI beeldgeneratie met authenticatie-bewuste parallelle dispatch. Alias `oma img`.
+
+```
+oma image <subcommand> ...
+oma img <subcommand> ...
+```
+
+**Subcommando's:**
+
+| Subcommando | Doel |
+|:-----------|:--------|
+| `generate <prompt...>` | Genereer afbeeldingen via `pollinations` (flux/zimage, gratis), `codex` (gpt-image-2 via ChatGPT OAuth) of `gemini` (vereist API-sleutel + billing, standaard uitgeschakeld) |
+| `doctor` | Controleer authenticatie- en installatiestatus per leverancier |
+| `list-vendors` | Lijst geregistreerde leveranciers en ondersteunde modellen |
+
+**`image generate` opties:**
+
+| Vlag | Beschrijving | Standaard |
+|:-----|:-----------|:--------|
+| `--vendor <name>` | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all` | `auto` |
+| `--size <size>` | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto` | leverancier-standaard |
+| `--quality <level>` | `low` \| `medium` \| `high` \| `auto` | leverancier-standaard |
+| `-n, --count <n>` | Aantal afbeeldingen (1..5) | `1` |
+| `--out <dir>` | Uitvoerdirectory | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | Sta `--out` paden buiten `$PWD` toe | `false` |
+| `--model <name>` | Leverancierspecifieke modeloverride | |
+| `--strategy <list>` | Gemini fallback-volgorde, komma-gescheiden (`mcp,stream,api`) | |
+| `--timeout <seconds>` | Timeout per afbeelding | leverancier-standaard |
+| `-r, --reference <path>` | Referentieafbeelding(en); herhaalbaar (`-r a.png -r b.png`) of komma-gescheiden. Ondersteund op `codex` en `gemini`; geweigerd op `pollinations`. Elk ≤5MB PNG/JPEG/GIF/WebP (magic-byte gevalideerd), max 10. | |
+| `-y, --yes` | Sla kostenbevestiging over | `false` |
+| `--no-prompt-in-manifest` | Sla SHA256 van prompt op in plaats van ruwe tekst | `false` |
+| `--dry-run` | Print plan en kostenschatting; voer niet uit | `false` |
+| `--format <format>` | CLI-uitvoerformaat: `text` \| `json` | `text` |
+
+Elke run schrijft een `manifest.json` naast de gegenereerde afbeeldingen die leverancier, model, prompt (of hash), grootte, kwaliteit en kosten registreert.
+
+**Voorbeelden:**
+
+```bash
+# Gratis, configuratieloze generatie
+oma image generate "minimalist sunrise over mountains"
+
+# Specifieke leverancier + grootte + aantal, sla kostenbevestiging over
+oma image generate "logo concept" --vendor codex --size 1024x1024 -n 3 -y
+
+# Alle leveranciers parallel ter vergelijking
+oma image generate "cat astronaut" --vendor all
+
+# Kostenschatting zonder uit te geven
+oma image generate "test prompt" --dry-run
+
+# Gebruik een referentieafbeelding voor stijl-/onderwerpoverdracht (codex of gemini)
+oma image generate "same otter in dramatic lighting" --vendor codex -r ~/Downloads/otter.jpeg
+
+# Meerdere referenties (herhaalbaar of komma-gescheiden)
+oma image generate "blend these styles" --vendor gemini -r a.png -r b.png
+oma image generate "blend these styles" --vendor gemini -r a.png,b.png
+
+# Doctor-check per leverancier
+oma image doctor --format json
+```
 
 ### star
 ```

@@ -115,16 +115,65 @@ jobs:
 
 ## 内部動作
 
-1. **Bunセットアップ** — `oven-sh/setup-bun@v2`
-2. **oh-my-agentインストール** — `bun install -g oh-my-agent`
-3. **oma update実行** — `--ci`フラグ（非インタラクティブ）、オプションで`--force`
-4. **変更チェック** — `.agents/`と`.claude/`のgit status確認
-5. **モードに応じて処理** — PRモード：`peter-evans/create-pull-request@v8`使用。コミットモード：直接コミット・プッシュ。
+このActionは`action/action.yml`で定義された[Composite Action](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action)です。次の4ステップを実行します。
+
+### Step 1：Bunのセットアップ
+
+```yaml
+- uses: oven-sh/setup-bun@v2
+```
+
+oh-my-agent CLIの実行に必要なBunランタイムをインストールします。
+
+### Step 2：oh-my-agentのインストール
+
+```bash
+bun install -g oh-my-agent
+```
+
+npmレジストリからCLIをグローバルインストールします。これにより`oma`コマンドが利用可能になります。
+
+### Step 3：oma updateの実行
+
+```bash
+FLAGS="--ci"
+if [ "${{ inputs.force }}" = "true" ]; then
+  FLAGS="$FLAGS --force"
+fi
+oma update $FLAGS
+```
+
+`--ci`フラグは更新を非インタラクティブモードで実行します（プロンプトをすべてスキップし、スピナーアニメーションの代わりにプレーンテキストを出力）。`--force`フラグを有効にすると、ユーザーがカスタマイズした設定ファイルを上書きします。
 
 `oma update --ci`の内部処理：
-1. レジストリから`prompt-manifest.json`取得
-2. ローカルバージョンと比較
-3. 最新tarballダウンロード・展開
-4. ユーザーカスタム設定を保持（`--force`除く）
-5. ベンダー適応とシンボリックリンクを更新
+
+1. メインブランチから`prompt-manifest.json`を取得して最新バージョン番号を確認
+2. `.agents/skills/_version.json`のローカルバージョンと比較
+3. バージョンが一致する場合、「Already up to date.」で終了
+4. 新しいバージョンが利用可能な場合、最新tarballをダウンロードして展開
+5. ユーザーがカスタマイズしたファイルを保持（`--force`が指定されていない限り）：`oma-config.yaml`、`mcp.json`、`stack/`ディレクトリ
+6. 既存の`.agents/`ディレクトリ上に新規ファイルをコピー
+7. 保持していたファイルを復元
+8. すべてのベンダー向けにベンダー適応（フック、設定、エージェント定義）を更新
+9. CLIシンボリックリンクをリフレッシュ
+
+### Step 4：変更の確認
+
+```bash
+if [ -n "$(git status --porcelain .agents/ .claude/ 2>/dev/null)" ]; then
+  echo "updated=true" >> "$GITHUB_OUTPUT"
+  VERSION=$(jq -r '.version' .agents/skills/_version.json)
+  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+else
+  echo "updated=false" >> "$GITHUB_OUTPUT"
+fi
+```
+
+`oma update`が`.agents/`または`.claude/`内のファイルを実際に変更したかどうかを確認します。`updated`と`version`の出力をそれに応じて設定します。
+
+その後、`mode`入力に応じて以下が実行されます。
+
+- **`pr`モード：** `peter-evans/create-pull-request@v8`を使い、`chore/update-oh-my-agent`ブランチでPRを作成します。PRには新バージョン番号、oh-my-agentリポジトリへのリンク、設定されたラベルが含まれます。ブランチがすでに存在する場合（前回未クローズのPRから）、既存のPRを更新します。
+
+- **`commit`モード：** Gitを`github-actions[bot]`として設定し、`.agents/`と`.claude/`をステージングし、設定されたメッセージでコミットしてベースブランチにプッシュします。
 

@@ -241,8 +241,7 @@ oma stats
 | `/orchestrate` | Persistente | Execução automatizada de agentes em paralelo com monitoramento e loops de verificação | Grandes projetos precisando de máximo paralelismo |
 | `/work` | Persistente | Coordenação multi-domínio passo a passo com aprovação do usuário em cada portão | Funcionalidades abrangendo múltiplos agentes onde você quer controle |
 | `/ultrawork` | Persistente | Workflow de qualidade de 5 fases, 17 etapas com 11 checkpoints de revisão | Entrega de qualidade máxima, código crítico para produção |
-| `/plan` | Não-persistente | Breakdown de tarefas dirigido pelo PM e definição de contrato de API | Antes de qualquer trabalho multi-agente complexo |
-| `/exec-plan` | Não-persistente | Criar e rastrear planos de execução como artefatos do repositório | Funcionalidades complexas precisando de progresso rastreado e logs de decisão |
+| `/plan` | Não-persistente | Breakdown de tarefas dirigido pelo PM, contratos de API e artefatos de plano rastreados em `docs/plans/work/` (sequencial `NNN-name.md`, campo Status para ciclo de vida) | Antes de qualquer trabalho multi-agente complexo; funcionalidades complexas precisando de progresso rastreado e logs de decisão |
 | `/brainstorm` | Não-persistente | Ideação orientada por design com propostas de 2-3 abordagens | Antes de se comprometer com uma abordagem de implementação |
 | `/deepinit` | Não-persistente | Inicialização completa do projeto — AGENTS.md, ARCHITECTURE.md, docs/ | Configurar oh-my-agent em um codebase existente |
 | `/review` | Não-persistente | Pipeline QA: segurança OWASP, performance, acessibilidade, qualidade de código | Antes de merge de código, revisão pré-deploy |
@@ -294,7 +293,7 @@ oh-my-agent detecta palavras-chave de workflow em 11 idiomas. Aqui estão exempl
 
 | Skill | Melhor Para | Saída Principal |
 |-------|-----------|----------------|
-| **oma-brainstorm** | "Tenho uma ideia", explorar abordagens | Documento de design em `docs/plans/` |
+| **oma-brainstorm** | "Tenho uma ideia", explorar abordagens | Documento de design em `docs/plans/designs/` |
 | **oma-pm** | "planeje isso", breakdown de tarefas | `.agents/results/plan-{sessionId}.json`, `task-board.md` |
 | **oma-frontend** | Componentes UI, formulários, páginas, estilização | Componentes React/TypeScript, testes Vitest |
 | **oma-backend** | APIs, auth, lógica de servidor, migrações | Endpoints, modelos, serviços, testes |
@@ -420,7 +419,7 @@ A flag `-w` em `agent:spawn` isola um agente em um diretório específico. Isso 
 | Agente bloqueado em HIGH clarification | Requisitos muito ambíguos | Forneça as respostas específicas que o agente solicitou, depois re-execute |
 | Ferramentas MCP não funcionam | Serena não configurado ou não executando | Verifique config MCP com `oma doctor` |
 | Agente excede limite de turnos | Tarefa muito complexa para turnos padrão | Aumente turnos com flag `-t 30`, ou decomponha em tarefas menores |
-| CLI errada usada para agente | model_preset (per-agent overrides via `agents:`) não configurado | Execute `oma install` para configurar, ou edite `oma-config.yaml` diretamente |
+| CLI errada usada para agente | `model_preset` (e overrides em `agents:`) não configurado | Execute `oma install` para configurar, ou edite `oma-config.yaml` diretamente |
 
 ---
 

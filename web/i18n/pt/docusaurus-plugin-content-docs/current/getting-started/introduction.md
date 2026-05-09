@@ -75,7 +75,7 @@ oh-my-agent resolve isso com especialização:
 |--------|--------|----------------------|
 | **oma-translator** | Tradução com consciência de contexto | Método de tradução em 4 estágios: Analisar Fonte, Extrair Significado, Reconstruir no Idioma Alvo, Verificar. Preserva tom, registro e terminologia de domínio. Detecção de padrões anti-IA. Suporta tradução em lote (arquivos i18n). Modo refinado opcional de 7 estágios para qualidade de publicação. Recursos: `translation-rubric.md`, `anti-ai-patterns.md`. |
 | **oma-orchestrator** | Coordenador multi-agente automatizado | Inicia subagentes CLI em paralelo, coordena via memória MCP, monitora progresso, executa loops de verificação. Configurável: MAX_PARALLEL (padrão 3), MAX_RETRIES (padrão 2), POLL_INTERVAL (padrão 30s). Inclui loop de revisão agente-para-agente e monitoramento de Dívida de Clarificação. Recursos: `subagent-prompt-template.md`, `memory-schema.md`. |
-| **oma-scm** | Commits convencionais | Analisa mudanças, determina tipo/escopo, divide por funcionalidade quando apropriado, gera mensagens de commit no formato Conventional Commits. Co-Author: `First Fluke <our.first.fluke@gmail.com>`. |
+| **oma-scm** | Software configuration management (SCM) + Git | Lida com estratégias de branching, fluxos de merge/rebase/conflito, worktrees, baselines e rastreamento de estado de release. Também gera mensagens de Conventional Commit com staging seguro. Co-Author: `First Fluke <our.first.fluke@gmail.com>`. |
 
 ### Busca, Retrospectiva e Processamento de Documentos
 
@@ -165,6 +165,43 @@ Quando você envia um prompt, oh-my-agent determina qual agente o trata usando o
 | automatic, parallel, orchestrate | oma-orchestrator |
 
 Para requisições complexas que abrangem múltiplos domínios, o roteamento segue ordens de execução estabelecidas. Por exemplo, "Crie um app fullstack" é roteado para: oma-pm (plano) depois oma-backend + oma-frontend (implementação paralela) depois oma-qa (revisão).
+
+---
+
+## HUD Statusline
+
+Quando executando no Claude Code, o oh-my-agent exibe um indicador de status persistente `[OMA]` na barra de status mostrando:
+- Nome do modelo (ex: Opus, Sonnet)
+- Uso de contexto com codificação por cor (verde < 70%, amarelo 70-85%, vermelho > 85%)
+- Estado do workflow ativo (se um workflow persistente está em execução)
+
+O HUD é alimentado por `.claude/hooks/hud.ts` usando o recurso de hook `statusLine` do Claude Code.
+
+---
+
+## Detecção Automática de Workflow
+
+Você não precisa digitar `/command` para acionar workflows. O hook `UserPromptSubmit` do oh-my-agent escaneia sua entrada em linguagem natural contra gatilhos de palavras-chave definidos em `.claude/hooks/triggers.json` — suportando 11 idiomas (Inglês, Coreano, Japonês, Chinês, Espanhol, Francês, Alemão, Português, Russo, Holandês, Polonês).
+
+- **Entrada acionável** (ex: "plan the auth feature") → carrega o workflow automaticamente
+- **Entrada informacional** (ex: "what is orchestrate?") → filtrada, nenhum workflow acionado
+- **`/command` explícito** → o hook pula a detecção para evitar duplicação
+- **Workflows persistentes** reinjetam contexto a cada mensagem até você dizer "workflow done"
+
+---
+
+## Suporte Cross-Vendor
+
+oh-my-agent não está limitado ao Claude Code. O sistema de hooks suporta:
+
+| Vendor | Integração |
+|--------|------------|
+| **Claude Code** | Hooks nativos (`UserPromptSubmit`, `Notification`, statusLine) |
+| **Gemini CLI** | Skills auto-carregadas de `.agents/skills/`, spawning de agentes via `oma agent:spawn` |
+| **Codex CLI** | Skills auto-carregadas, requisições paralelas mediadas pelo modelo |
+| **Qwen Code** | Suporte a hooks para detecção de workflow |
+
+A detecção de vendor acontece automaticamente — agentes adaptam seu método de spawning baseado no ambiente de runtime detectado.
 
 ---
 

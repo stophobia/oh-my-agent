@@ -69,6 +69,10 @@ Setzen Sie diese Umgebungsvariable auf `json`, um JSON-Ausgabe bei allen Befehle
 | `verify` | Ja | Ja | Verifikationsergebnisse pro Prüfung |
 | `visualize` | Ja | Ja | Abhängigkeitsgraph als JSON |
 | `describe` | Immer JSON | N/A | Gibt immer JSON aus (Introspektionsbefehl) |
+| `recap` | Ja | Ja | Konversationsverlauf pro Tool/Sitzung |
+| `export` | Ja | Ja | Exportstatus und Zielpfade |
+| `image generate` / `image doctor` / `image list-vendors` | `--format json` | N/A | `--format json` statt `--json` verwenden |
+| `search ...` | Immer JSON | N/A | Alle `search`-Subbefehle streamen JSON; mit `--pretty` lesbar formatieren |
 
 ---
 

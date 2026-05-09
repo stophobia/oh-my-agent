@@ -19,6 +19,8 @@ description: Hướng dẫn cài đặt đầy đủ cho oh-my-agent — ba phư
 curl -fsSL https://raw.githubusercontent.com/first-fluke/oh-my-agent/main/cli/install.sh | bash
 ```
 
+Script bootstrap này chỉ hỗ trợ macOS và Linux. Trên Windows, hãy cài `bun` và `uv` thủ công, sau đó chạy `bunx oh-my-agent@latest`.
+
 Script này:
 1. Phát hiện nền tảng của bạn (macOS, Linux)
 2. Kiểm tra bun và uv, cài đặt nếu thiếu
@@ -123,16 +125,22 @@ oma dashboard:web       # Dashboard web tại http://localhost:9847
 oma agent:spawn         # Spawn agent từ terminal
 oma agent:parallel      # Thực thi agent song song
 oma agent:status        # Kiểm tra trạng thái agent
+oma agent:review        # Đánh giá code qua CLI bên ngoài (codex/claude/gemini/qwen)
 oma stats               # Thống kê phiên làm việc
-oma retro               # Phân tích hồi cứu
+oma retro               # Hồi cứu kỹ thuật (commit, hotspot, xu hướng)
+oma recap               # Tổng kết lịch sử hội thoại trên các công cụ AI
 oma cleanup             # Dọn dẹp artifact phiên
+oma link                # Tái tạo file vendor-native từ SSOT `.agents/`
 oma update              # Cập nhật oh-my-agent
-oma verify              # Xác minh đầu ra agent
-oma visualize           # Trực quan hóa phụ thuộc
-oma describe            # Mô tả cấu trúc dự án
-oma bridge              # Bridge SSE-to-stdio cho Antigravity
-oma memory:init         # Khởi tạo nhà cung cấp bộ nhớ
-oma auth:status         # Kiểm tra trạng thái xác thực CLI
+oma verify              # Xác minh đầu ra agent (build/test/scope/secret)
+oma visualize           # Trực quan hóa phụ thuộc (alias: `oma viz`)
+oma describe            # Nội quan các lệnh CLI dưới dạng JSON
+oma bridge              # Bridge MCP stdio ↔ Streamable HTTP
+oma memory:init         # Khởi tạo schema bộ nhớ Serena
+oma auth:status         # Kiểm tra trạng thái xác thực CLI (gh/gemini/claude/codex/qwen)
+oma search              # Primitive tìm kiếm cơ học (alias: `oma s`)
+oma image               # Sinh ảnh AI đa vendor (alias: `oma img`)
+oma export              # Xuất skill cho IDE bên ngoài (ví dụ: cursor)
 oma star                # Star repository
 ```
 
@@ -189,55 +197,49 @@ Sau khi cài, chạy `/auth` trong CLI để xác thực.
 Lệnh `oma install` tạo `.agents/oma-config.yaml`. Đây là file cấu hình trung tâm cho toàn bộ hành vi oh-my-agent:
 
 ```yaml
-# Ngôn ngữ phản hồi cho tất cả agent và workflow
+# Bắt buộc
 language: en
+model_preset: gemini-only   # built-in: claude-only, codex-only, gemini-only, qwen-only, antigravity
 
-# Định dạng ngày dùng trong báo cáo và file bộ nhớ
-date_format: "YYYY-MM-DD"
+# Tùy chọn — tùy chọn ngày/giờ
+date_format: ISO
+timezone: UTC
 
-# Múi giờ cho timestamp
-timezone: "UTC"
+# Tùy chọn — tự động cập nhật CLI ở chế độ nền
+auto_update_cli: true
 
-# Công cụ CLI mặc định cho spawn agent
-# Tùy chọn: gemini, claude, codex, qwen
-default_cli: gemini
+# Tùy chọn — ghi đè từng phần theo agent (chỉ object, shallow merge)
+agents:
+  backend: { model: openai/gpt-5.5, effort: high }
+  qa:      { model: anthropic/claude-sonnet-4-6 }
 
-# Ánh xạ CLI theo từng agent (ghi đè default_cli)
-model_preset (per-agent overrides via `agents:`):
-  frontend: claude       # Suy luận UI phức tạp
-  backend: gemini        # Tạo API nhanh
-  mobile: gemini
-  db: gemini
-  pm: gemini             # Phân tách nhanh
-  qa: claude             # Đánh giá bảo mật kỹ lưỡng
-  debug: claude          # Phân tích nguyên nhân gốc sâu
-  design: claude
-  tf-infra: gemini
-  dev-workflow: gemini
-  translator: claude
-  orchestrator: gemini
-  commit: gemini
+# Tùy chọn — slug model do người dùng định nghĩa
+# models:
+#   my-model: { cli: gemini, cli_model: gemini-3-flash, supports: { thinking: true } }
+
+# Tùy chọn — preset do người dùng định nghĩa
+# custom_presets:
+#   my-team:
+#     extends: claude-only
+#     agent_defaults:
+#       backend: { model: openai/gpt-5.5, effort: high }
 ```
 
 ### Tham chiếu trường
 
-| Trường | Kiểu | Mặc định | Mô tả |
-|-------|------|---------|-------------|
-| `language` | string | `en` | Mã ngôn ngữ phản hồi. Tất cả đầu ra agent, thông báo workflow và báo cáo sử dụng ngôn ngữ này. Hỗ trợ 11 ngôn ngữ (en, ko, ja, zh, es, fr, de, pt, ru, nl, pl). |
-| `date_format` | string | `YYYY-MM-DD` | Chuỗi định dạng ngày cho timestamp trong kế hoạch, file bộ nhớ và báo cáo. |
-| `timezone` | string | `UTC` | Múi giờ cho tất cả timestamp. Sử dụng định danh múi giờ chuẩn (ví dụ: `Asia/Seoul`, `America/New_York`). |
-| `default_cli` | string | `gemini` | CLI dự phòng khi không có ánh xạ agent cụ thể. Được dùng làm cấp 3 trong ưu tiên phân giải vendor. |
-| `model_preset (per-agent overrides via `agents:`)` | map | (trống) | Ánh xạ ID agent đến vendor CLI cụ thể. Ưu tiên hơn `default_cli`. |
+| Trường | Kiểu | Bắt buộc | Mô tả |
+|-------|------|----------|-------------|
+| `language` | string | Có | Mã ngôn ngữ phản hồi. Hỗ trợ en, ko, ja, zh, es, fr, de, pt, ru, nl, pl. |
+| `model_preset` | string | Có | Khóa preset đang dùng. Là một trong năm khóa built-in hoặc khóa `custom_presets`. Xem [Per-Agent Models](../guide/per-agent-models.md). |
+| `date_format` | string | Không | Định dạng timestamp (`ISO`, `US`, `EU`). Mặc định: `ISO`. |
+| `timezone` | string | Không | Định danh múi giờ (ví dụ: `Asia/Seoul`). Mặc định: `UTC`. |
+| `agents` | map | Không | Ghi đè từng phần theo agent (chỉ object `AgentSpec`). Shallow-merge trên giá trị mặc định của preset. |
+| `models` | map | Không | Slug model do người dùng định nghĩa, trước đây ở trong `models.yaml`. |
+| `custom_presets` | map | Không | Preset do người dùng định nghĩa. Hỗ trợ `extends:` để kế thừa từng phần từ preset built-in. |
 
 ### Ưu tiên phân giải vendor
 
-Khi spawn agent, vendor CLI được xác định theo thứ tự ưu tiên (cao nhất trước):
-
-1. Flag `--model` truyền vào `oma agent:spawn`
-2. Mục `model_preset (per-agent overrides via `agents:`)` cho agent cụ thể đó trong `oma-config.yaml`
-3. Cài đặt `default_cli` trong `oma-config.yaml`
-4. `active_vendor` trong `cli-config.yaml` (dự phòng cũ)
-5. `gemini` (dự phòng cứng)
+Khi spawn agent, vendor CLI được phân giải từ `model_preset` đang dùng (và bất kỳ ghi đè `agents:` nào). Xem [Per-Agent Models](../guide/per-agent-models.md) để biết đầy đủ chi tiết.
 
 ---
 
@@ -259,6 +261,14 @@ Lệnh này kiểm tra:
 - `oma-config.yaml` là YAML hợp lệ với các trường bắt buộc
 
 Nếu có vấn đề, `oma doctor` cho bạn biết chính xác cần sửa gì, kèm lệnh sao chép-dán.
+
+Để xem model và CLI đã phân giải cho từng agent, chạy:
+
+```bash
+oma doctor --profile
+```
+
+Xem [Per-Agent Models](../guide/per-agent-models.md) để biết toàn bộ ma trận và chi tiết di chuyển.
 
 ---
 

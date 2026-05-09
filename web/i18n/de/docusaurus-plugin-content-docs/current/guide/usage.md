@@ -109,8 +109,7 @@ Tippe diese in deiner KI-IDE, um strukturierte Prozesse auszuloesen:
 | Befehl | Was Er Tut | Wann Verwenden |
 |--------|-----------|---------------|
 | `/brainstorm` | Freie Ideenfindung und Erkundung | Bevor du dich auf einen Ansatz festlegst |
-| `/plan` | PM-Aufgabenzerlegung → `.agents/results/plan-{sessionId}.json` | Vor dem Start jedes komplexen Features |
-| `/exec-plan` | Bestehenden Plan Schritt fuer Schritt ausfuehren | Nach `/plan` |
+| `/plan` | PM-Aufgabenzerlegung, API-Vertraege und nachverfolgte Plan-Artefakte in `docs/plans/work/` (sequentiell `NNN-name.md`, `Status`-Feld fuer den Lebenszyklus) | Vor dem Start jedes komplexen Features; auch fuer komplexe Features, die nachverfolgten Fortschritt brauchen |
 | `/work` | Schrittweise Multi-Domain-Koordination | Features, die mehrere Agenten umfassen |
 | `/orchestrate` | Automatisierte parallele Agenten-Ausfuehrung | Grosse Projekte, maximale Parallelitaet |
 | `/ultrawork` | 5-Phasen-Qualitaets-Workflow (11 Review-Gates) | Maximale Qualitaetsauslieferung |

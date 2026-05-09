@@ -126,49 +126,28 @@ Không phải tất cả AI CLI đều hoạt động tốt như nhau ở mọi 
 
 ```yaml
 # .agents/oma-config.yaml
-
-# Ngôn ngữ phản hồi
 language: en
+model_preset: antigravity   # mixed: Claude cho QA/PM, Codex cho impl, Gemini cho dev-workflow
 
-# Định dạng ngày cho báo cáo
-date_format: "YYYY-MM-DD"
-
-# Múi giờ cho timestamp
-timezone: "Asia/Seoul"
-
-# CLI mặc định (dùng khi không có ánh xạ agent cụ thể)
-default_cli: gemini
-
-# Định tuyến CLI theo agent
-model_preset (per-agent overrides via `agents:`):
-  frontend: claude       # Suy luận UI phức tạp, tổ hợp component
-  backend: gemini        # Scaffold API nhanh, tạo CRUD
-  mobile: gemini         # Tạo mã Flutter nhanh
-  db: gemini             # Thiết kế schema nhanh
-  pm: gemini             # Phân tách task nhanh
-  qa: claude             # Đánh giá bảo mật và accessibility kỹ lưỡng
-  debug: claude          # Phân tích nguyên nhân gốc sâu, truy vết symbol
-  design: claude         # Quyết định thiết kế tinh tế, phát hiện anti-pattern
-  tf-infra: gemini       # Tạo HCL
-  dev-workflow: gemini   # Cấu hình task runner
-  translator: claude     # Dịch thuật tinh tế với nhạy cảm văn hóa
-  orchestrator: gemini   # Điều phối nhanh
-  commit: gemini         # Tạo commit message đơn giản
+# Ghi đè các agent cụ thể trên preset
+agents:
+  frontend: { model: anthropic/claude-sonnet-4-6 }
+  backend:  { model: openai/gpt-5.5, effort: high }
 ```
+
+Preset built-in: `claude-only`, `codex-only`, `gemini-only`, `qwen-only`, `antigravity`. Xem [Per-Agent Models](../guide/per-agent-models.md) để biết chi tiết.
 
 ### Ưu tiên phân giải vendor
 
-Khi `oma agent:spawn` xác định CLI nào sử dụng, nó theo ưu tiên sau (cao nhất thắng):
+Khi `oma agent:spawn` xác định CLI nào sử dụng:
 
 | Ưu tiên | Nguồn | Ví dụ |
 |----------|--------|---------|
 | 1 (cao nhất) | Flag `--model` | `oma agent:spawn backend "task" session-01 -m claude` |
-| 2 | `model_preset (per-agent overrides via `agents:`)` | `model_preset (per-agent overrides via `agents:`).backend: gemini` trong oma-config.yaml |
-| 3 | `default_cli` | `default_cli: gemini` trong oma-config.yaml |
-| 4 | `active_vendor` | Cài đặt cũ `cli-config.yaml` |
-| 5 (thấp nhất) | Dự phòng cứng | `gemini` |
+| 2 | Ghi đè `agents:` trong `oma-config.yaml` | `agents: { backend: { model: openai/gpt-5.5 } }` |
+| 3 | Mặc định agent của `model_preset` đang dùng | Tra cứu preset cho vai trò agent |
 
-Nghĩa là flag `--model` luôn thắng. Nếu không có flag, hệ thống kiểm tra ánh xạ agent cụ thể, rồi mặc định, rồi config cũ, và cuối cùng dự phòng Gemini.
+Flag `--model` luôn thắng. Nếu không có flag, hệ thống kiểm tra ghi đè `agents:` trước, rồi đến mặc định của preset.
 
 ---
 

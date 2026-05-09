@@ -106,15 +106,14 @@ oma stats
 
 ---
 
-## Tất cả 15 lệnh workflow
+## Tất cả các lệnh workflow
 
 | Lệnh | Loại | Chức năng | Khi nào dùng |
 |---------|------|-------------|-------------|
 | `/orchestrate` | Liên tục | Thực thi agent song song tự động với giám sát và vòng lặp xác minh | Dự án lớn cần song song tối đa |
 | `/work` | Liên tục | Điều phối đa lĩnh vực từng bước với duyệt người dùng ở mỗi cổng | Tính năng trải nhiều agent muốn kiểm soát |
 | `/ultrawork` | Liên tục | Workflow chất lượng 5 giai đoạn, 17 bước, 11 checkpoint đánh giá | Phân phối chất lượng tối đa, mã production-critical |
-| `/plan` | Không liên tục | Phân tách task do PM dẫn dắt và định nghĩa API contract | Trước công việc đa agent phức tạp |
-| `/exec-plan` | Không liên tục | Tạo và theo dõi kế hoạch thực thi dưới dạng artifact repository | Tính năng phức tạp cần theo dõi tiến trình |
+| `/plan` | Không liên tục | Phân tách task do PM dẫn dắt, API contract, và artifact kế hoạch được theo dõi trong `docs/plans/work/` (`NNN-name.md` tuần tự, trường Status cho lifecycle) | Trước công việc đa agent phức tạp; tính năng phức tạp cần theo dõi tiến trình và nhật ký quyết định |
 | `/brainstorm` | Không liên tục | Khám phá ý tưởng ưu tiên thiết kế với 2-3 đề xuất hướng tiếp cận | Trước khi cam kết hướng triển khai |
 | `/deepinit` | Không liên tục | Khởi tạo dự án đầy đủ — AGENTS.md, ARCHITECTURE.md, docs/ | Thiết lập oh-my-agent trong codebase hiện có |
 | `/review` | Không liên tục | Pipeline QA: bảo mật OWASP, hiệu suất, accessibility, chất lượng mã | Trước merge mã, đánh giá trước triển khai |
@@ -131,7 +130,7 @@ oma stats
 
 | Skill | Phù hợp nhất cho | Đầu ra chính |
 |-------|---------|---------------|
-| **oma-brainstorm** | "Tôi có ý tưởng", khám phá hướng tiếp cận | Tài liệu thiết kế trong `docs/plans/` |
+| **oma-brainstorm** | "Tôi có ý tưởng", khám phá hướng tiếp cận | Tài liệu thiết kế trong `docs/plans/designs/` |
 | **oma-pm** | "Lập kế hoạch cái này", phân tách task | `.agents/results/plan-{sessionId}.json`, `task-board.md` |
 | **oma-frontend** | Component UI, form, trang, styling | Component React/TypeScript, test Vitest |
 | **oma-backend** | API, xác thực, logic server, migration | Endpoint, model, service, test |

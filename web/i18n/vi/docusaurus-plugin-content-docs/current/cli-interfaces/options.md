@@ -69,10 +69,34 @@ oma retro    # xuất JSON
 | `verify` | Có | Có | Kết quả xác minh theo từng kiểm tra |
 | `visualize` | Có | Có | Đồ thị phụ thuộc dạng JSON |
 | `describe` | Luôn JSON | N/A | Luôn xuất JSON (lệnh introspection) |
+| `recap` | Có | Có | Lịch sử hội thoại theo công cụ/phiên |
+| `export` | Có | Có | Trạng thái xuất và đường dẫn đích |
+| `image generate` / `image doctor` / `image list-vendors` | `--format json` | N/A | Dùng `--format json` thay cho `--json` |
+| `search ...` | Luôn JSON | N/A | Mọi subcommand `search` đều stream JSON; dùng `--pretty` để con người đọc |
 
 ---
 
 ## Tùy chọn theo lệnh
+
+### oma (cài đặt)
+
+```
+oma
+```
+
+Không có flag. Trình cài đặt tương tác sẽ hỏi chọn preset rồi ghi `model_preset` vào `.agents/oma-config.yaml`.
+
+### doctor
+
+```
+oma doctor [--json] [--output <format>] [--profile]
+```
+
+| Flag | Mô tả | Mặc định |
+|:-----|:-----------|:--------|
+| `--json` | Xuất JSON thay vì văn bản đã định dạng. | `false` |
+| `--output <format>` | Định dạng đầu ra rõ ràng (`text` hoặc `json`). Xem [Tùy chọn đầu ra](#tùy-chọn-đầu-ra). | `text` |
+| `--profile` | Hiển thị ma trận sức khỏe profile — slug model, CLI và trạng thái xác thực đã phân giải cho từng agent từ `model_preset` đang dùng và các ghi đè `agents:`. Xem [Per-Agent Models](../guide/per-agent-models.md). | `false` |
 
 ### update
 
@@ -208,6 +232,84 @@ tasks:
   - agent: frontend
     task: "Build user dashboard"
 ```
+
+### recap
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+| Flag | Mô tả | Mặc định |
+|:-----|:-----------|:--------|
+| `--window <period>` | Khoảng thời gian: `1d`, `3d`, `7d`, `2w`, `30d`. Bị bỏ qua khi đặt `--date`. | `1d` |
+| `--date <date>` | Ngày cụ thể (`YYYY-MM-DD`). Ưu tiên hơn `--window`. | |
+| `--tool <tools>` | Lọc phiên theo công cụ. Phân tách bằng dấu phẩy: `claude`, `codex`, `gemini`, `qwen`, `cursor`. | tất cả công cụ |
+| `--top <n>` | Chỉ hiển thị N dự án/chủ đề hàng đầu trong tổng kết. | không giới hạn |
+| `--sort <metric>` | Sắp xếp phiên theo `count` hoặc `duration`. | `count` |
+| `--mermaid` | Xuất biểu đồ Gantt Mermaid thay cho tổng kết mặc định. | `false` |
+| `--graph` | Mở đồ thị tương tác trong trình duyệt. Loại trừ lẫn nhau với `--mermaid`. | `false` |
+
+### export
+
+```
+oma export <format> [-d <path>] [--json] [--output <format>]
+```
+
+| Flag | Viết tắt | Mô tả | Mặc định |
+|:-----|:------|:-----------|:--------|
+| `--dir <path>` | `-d` | Thư mục đích để ghi các quy tắc đã xuất. | `process.cwd()` |
+
+**Định dạng được hỗ trợ:** `cursor` (ghi file `.cursor/rules` lấy từ các skill đã cài).
+
+### search
+
+```
+oma search <subcommand> [...]
+```
+
+Nhóm `search` tự kèm đầu ra JSON riêng (không có flag `--json` / `--output`). Dùng `--pretty` trên các subcommand URL/query để in đẹp kết quả, và dựa vào tùy chọn của từng subcommand bên dưới:
+
+| Subcommand | Tùy chọn đáng chú ý |
+|:-----------|:---------------|
+| `fetch <url>` | `--only`, `--skip`, `--include-archive`, `--timeout`, `--locale`, `--pretty` |
+| `api <url>` / `meta <url>` / `rss <url>` / `archive <url>` | `--timeout`, `--locale`, `--pretty` |
+| `api:search <query>` | `--platforms <list>`, `--timeout`, `--locale`, `--pretty` |
+| `rss:google <query>` | `--locale` (mặc định `en-US`) |
+| `media <url>` | `--subs`, `--sub-lang <list>` (mặc định `en`), `--format <spec>`, `--timeout` (mặc định `30`), `--pretty` |
+| `code <query>` | `--host <github\|gitlab>` (mặc định `github`), `--language`, `--repo`, `--limit` (mặc định `20`), `--pretty` |
+| `trust <domain>` | `--pretty` |
+| `doctor` | không có — chạy kiểm tra binary cho Chrome / `python3 curl_cffi` / `yt-dlp` / `gh` |
+
+**Mã thoát:** `0` ok, `1` error, `2` blocked, `3` not-found, `4` invalid-input, `5` auth-required, `6` timeout. Dùng các mã này trong script để phân biệt blocker tạm thời với input không hợp lệ.
+
+### image
+
+```
+oma image <subcommand> [...]
+```
+
+Định dạng đầu ra được điều khiển ở mỗi subcommand qua `--format <text|json>` (không phải flag `--json` chung).
+
+`image generate` chấp nhận:
+
+| Flag | Viết tắt | Mô tả | Mặc định |
+|:-----|:------|:-----------|:--------|
+| `--vendor <name>` | | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all`. `auto` phân giải từ `image-config.yaml` và xác thực sẵn có. | `auto` |
+| `--size <size>` | | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto`. | mặc định của vendor |
+| `--quality <level>` | | `low` \| `medium` \| `high` \| `auto`. | mặc định của vendor |
+| `--count <n>` | `-n` | Số lượng ảnh, 1..5. | `1` |
+| `--out <dir>` | | Thư mục đầu ra. Phải nằm trong `$PWD` trừ khi đặt `--allow-external-out`. | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | | Cho phép `--out` nằm ngoài `$PWD`. | `false` |
+| `--model <name>` | | Ghi đè model theo vendor (ví dụ: `gpt-image-2`, `flux`, `imagen-4`). | mặc định của vendor |
+| `--strategy <list>` | | Thứ tự fallback của Gemini, phân tách bằng dấu phẩy gồm `mcp`, `stream`, `api`. | mặc định của vendor |
+| `--timeout <seconds>` | | Timeout cho từng ảnh. | mặc định của vendor |
+| `--reference <path>` | `-r` | Ảnh tham chiếu để chuyển style/subject. Có thể lặp (`-r a.png -r b.png`) hoặc phân tách bằng dấu phẩy. Được kiểm tra kích thước (≤5MB), định dạng (PNG/JPEG/GIF/WebP qua magic bytes) và số lượng (≤10). Hỗ trợ trên `codex` (truyền `-i` cho `codex exec`) và `gemini` (inline base64 `inlineData`). Bị từ chối với exit 4 trên `pollinations`. | |
+| `--yes` | `-y` | Bỏ qua prompt xác nhận chi phí. | `false` |
+| `--no-prompt-in-manifest` | | Lưu SHA256 của prompt thay vì văn bản gốc trong `manifest.json`. | `false` |
+| `--dry-run` | | In kế hoạch và ước tính chi phí; không thực thi. | `false` |
+| `--format <format>` | | `text` \| `json`. | `text` |
+
+`image doctor` và `image list-vendors` chỉ chấp nhận `--format <text|json>`.
 
 ### memory:init
 

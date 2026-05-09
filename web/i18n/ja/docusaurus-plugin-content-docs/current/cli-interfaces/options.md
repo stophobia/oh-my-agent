@@ -45,9 +45,47 @@ oma stats    # JSON出力
 
 **解決順序：** `--json` > `--output` > 環境変数 > `text`（デフォルト）。
 
+### JSON出力をサポートするコマンド
+
+| コマンド | `--json` | `--output` | 備考 |
+|:--------|:---------|:----------|:------|
+| `doctor` | はい | はい | CLIチェック、MCPステータス、スキルステータスを含む |
+| `stats` | はい | はい | フルメトリクスオブジェクト |
+| `retro` | はい | はい | メトリクス、作者、コミットタイプを含むスナップショット |
+| `cleanup` | はい | はい | クリーンアップされた項目のリスト |
+| `auth:status` | はい | はい | CLIごとの認証ステータス |
+| `memory:init` | はい | はい | 初期化結果 |
+| `verify` | はい | はい | チェックごとの検証結果 |
+| `visualize` | はい | はい | JSONとしての依存グラフ |
+| `describe` | 常にJSON | N/A | 常にJSONを出力（イントロスペクションコマンド） |
+| `recap` | はい | はい | ツール/セッションごとの会話履歴 |
+| `export` | はい | はい | エクスポートステータスと出力先パス |
+| `image generate` / `image doctor` / `image list-vendors` | `--format json` | N/A | `--json`の代わりに`--format json`を使用 |
+| `search ...` | 常にJSON | N/A | すべての`search`サブコマンドはJSONをストリーム出力。人間用の整形には`--pretty`を使用 |
+
 ---
 
 ## コマンドごとのオプション
+
+### oma（install）
+
+```
+oma
+```
+
+フラグなし。インタラクティブインストーラーがプリセット選択を促し、`.agents/oma-config.yaml`に`model_preset`を書き込みます。
+
+### doctor
+
+```
+oma doctor [--json] [--output <format>] [--profile]
+```
+
+| フラグ | 説明 | デフォルト |
+|:-----|:-----------|:--------|
+| `--json` | フォーマット済みテキストの代わりにJSONを出力。 | `false` |
+| `--output <format>` | 明示的な出力フォーマット（`text`または`json`）。[出力オプション](#出力オプション)を参照。 | `text` |
+| `--profile` | プロファイルヘルスマトリクスを表示。アクティブな`model_preset`と`agents:`オーバーライドから、エージェントごとに解決されたモデルスラグ、CLI、認証ステータスを表示します。詳細は[エージェント別モデル](../guide/per-agent-models.md)を参照。 | `false` |
 
 ### update
 
@@ -119,6 +157,84 @@ oma update [-f | --force] [--ci]
 | `--no-wait` | バックグラウンドモード |
 
 インラインタスク形式：`backend:Implement auth API:./api`（最後のコロン区切りが`./`、`/`、`.`で始まればワークスペース）。
+
+### recap
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+| フラグ | 説明 | デフォルト |
+|:-----|:-----------|:--------|
+| `--window <period>` | 時間ウィンドウ：`1d`、`3d`、`7d`、`2w`、`30d`。`--date`が指定されている場合は無視。 | `1d` |
+| `--date <date>` | 特定の日付（`YYYY-MM-DD`）。`--window`より優先。 | |
+| `--tool <tools>` | ツールでセッションをフィルタ。カンマ区切り：`claude`、`codex`、`gemini`、`qwen`、`cursor`。 | すべてのツール |
+| `--top <n>` | サマリ内の上位N件のプロジェクト/トピックのみ表示。 | 無制限 |
+| `--sort <metric>` | セッションを`count`または`duration`でソート。 | `count` |
+| `--mermaid` | デフォルトサマリの代わりにMermaid Ganttチャートを出力。 | `false` |
+| `--graph` | ブラウザでインタラクティブグラフを開く。`--mermaid`と排他。 | `false` |
+
+### export
+
+```
+oma export <format> [-d <path>] [--json] [--output <format>]
+```
+
+| フラグ | 短縮形 | 説明 | デフォルト |
+|:-----|:------|:-----------|:--------|
+| `--dir <path>` | `-d` | エクスポートしたルールを書き込むターゲットディレクトリ。 | `process.cwd()` |
+
+**サポートされるフォーマット：** `cursor`（インストール済みスキルから派生した`.cursor/rules`ファイルを書き出す）。
+
+### search
+
+```
+oma search <subcommand> [...]
+```
+
+`search`グループは独自のJSON出力を持ちます（`--json` / `--output`フラグなし）。URL/queryサブコマンドでは`--pretty`で整形でき、サブコマンド固有のオプションは以下のとおりです。
+
+| サブコマンド | 主なオプション |
+|:-----------|:---------------|
+| `fetch <url>` | `--only`、`--skip`、`--include-archive`、`--timeout`、`--locale`、`--pretty` |
+| `api <url>` / `meta <url>` / `rss <url>` / `archive <url>` | `--timeout`、`--locale`、`--pretty` |
+| `api:search <query>` | `--platforms <list>`、`--timeout`、`--locale`、`--pretty` |
+| `rss:google <query>` | `--locale`（デフォルト`en-US`） |
+| `media <url>` | `--subs`、`--sub-lang <list>`（デフォルト`en`）、`--format <spec>`、`--timeout`（デフォルト`30`）、`--pretty` |
+| `code <query>` | `--host <github\|gitlab>`（デフォルト`github`）、`--language`、`--repo`、`--limit`（デフォルト`20`）、`--pretty` |
+| `trust <domain>` | `--pretty` |
+| `doctor` | なし — Chrome / `python3 curl_cffi` / `yt-dlp` / `gh`のバイナリチェックを実行 |
+
+**終了コード：** `0` ok、`1` error、`2` blocked、`3` not-found、`4` invalid-input、`5` auth-required、`6` timeout。スクリプト中で一時的なブロッカーと無効入力を区別するために使用してください。
+
+### image
+
+```
+oma image <subcommand> [...]
+```
+
+出力フォーマットはサブコマンドごとに`--format <text|json>`で制御します（共有の`--json`フラグではありません）。
+
+`image generate`が受け付けるフラグ：
+
+| フラグ | 短縮形 | 説明 | デフォルト |
+|:-----|:------|:-----------|:--------|
+| `--vendor <name>` | | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all`。`auto`は`image-config.yaml`と利用可能な認証から解決。 | `auto` |
+| `--size <size>` | | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto`。 | ベンダーデフォルト |
+| `--quality <level>` | | `low` \| `medium` \| `high` \| `auto`。 | ベンダーデフォルト |
+| `--count <n>` | `-n` | 画像数、1..5。 | `1` |
+| `--out <dir>` | | 出力ディレクトリ。`--allow-external-out`が指定されない限り`$PWD`内である必要があります。 | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | | `--out`に`$PWD`外のパスを許可。 | `false` |
+| `--model <name>` | | ベンダー固有のモデルオーバーライド（例：`gpt-image-2`、`flux`、`imagen-4`）。 | ベンダーデフォルト |
+| `--strategy <list>` | | Geminiのフォールバック順、カンマ区切りで`mcp`、`stream`、`api`を指定。 | ベンダーデフォルト |
+| `--timeout <seconds>` | | 画像ごとのタイムアウト。 | ベンダーデフォルト |
+| `--reference <path>` | `-r` | スタイル/サブジェクト転送用のリファレンス画像。複数指定可（`-r a.png -r b.png`）またはカンマ区切り。サイズ（≤5MB）、フォーマット（PNG/JPEG/GIF/WebP、マジックバイトで判定）、件数（≤10）が検証されます。`codex`（`codex exec`に`-i`を渡す）と`gemini`（base64の`inlineData`としてインライン化）でサポート。`pollinations`では終了コード4で拒否。 | |
+| `--yes` | `-y` | コスト確認プロンプトをスキップ。 | `false` |
+| `--no-prompt-in-manifest` | | `manifest.json`にプロンプトの生テキストではなくSHA256を保存。 | `false` |
+| `--dry-run` | | プランとコスト見積もりを表示。実行しない。 | `false` |
+| `--format <format>` | | `text` \| `json`。 | `text` |
+
+`image doctor`と`image list-vendors`は`--format <text|json>`のみを受け付けます。
 
 ### memory:init
 

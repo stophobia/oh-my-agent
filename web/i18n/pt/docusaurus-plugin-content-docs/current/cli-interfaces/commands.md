@@ -29,10 +29,12 @@ oma
 5. Pergunta sobre symlinks para GitHub Copilot.
 6. Baixa o tarball mais recente do registro.
 7. Instala recursos compartilhados, workflows, configs e skills selecionadas.
-8. Instala adaptações de vendor para todos os vendors (Claude, Codex, Gemini, Qwen).
-9. Cria symlinks CLI.
-10. Oferece habilitar `git rerere`.
-11. Oferece configurar MCP para Antigravity IDE e Gemini CLI.
+8. Instala adaptações de vendor para todos os 4 vendors (Claude, Codex, Gemini, Qwen).
+9. Aplica configurações recomendadas do Claude Code (`~/.claude/settings.json`) quando o Claude Code é detectado.
+10. Cria symlinks CLI.
+11. Oferece habilitar `git rerere`.
+12. Oferece configurar MCP para Antigravity IDE e Gemini CLI.
+13. Solicita estrela no GitHub se `gh` está autenticado.
 
 **Exemplo:**
 ```bash
@@ -46,7 +48,7 @@ oma
 Verificação de saúde para instalações CLI, configs MCP e status de skills.
 
 ```
-oma doctor [--json] [--output <format>]
+oma doctor [--json] [--output <format>] [--profile]
 ```
 
 **Opções:**
@@ -55,12 +57,25 @@ oma doctor [--json] [--output <format>]
 |:-----|:-----------|
 | `--json` | Saída como JSON |
 | `--output <format>` | Formato de saída (`text` ou `json`) |
+| `--profile` | Mostra a matriz de saúde do perfil — exibe o slug do modelo resolvido, a CLI e o status de autenticação por agente a partir do `model_preset` ativo e dos overrides em `agents:`. Veja [Per-Agent Models](../guide/per-agent-models.md). |
 
 **O que verifica:**
 - Instalações CLI: gemini, claude, codex, qwen (versão e caminho).
 - Status de autenticação para cada CLI.
 - Configuração MCP: `~/.gemini/settings.json`, `~/.claude.json`, `~/.codex/config.toml`.
 - Skills instaladas: quais skills estão presentes e seu status.
+- Diretório de memória do Serena: existência de `.serena/memories/` e contagem de arquivos.
+- Workflows globais: verifica o status de instalação de `~/.gemini/antigravity/global_workflows/`.
+- Git rerere: se `rerere.enabled` está configurado globalmente.
+- Configurações recomendadas do Claude Code: verifica `~/.claude/settings.json` para configuração ideal:
+- `cleanupPeriodDays >= 180` (preserva histórico de conversas)
+- `CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS >= 100000`
+- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE >= 80`
+- `DISABLE_TELEMETRY`, `DISABLE_ERROR_REPORTING`, `CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY` definidos como `"1"`
+- Strings de atribuição para commits e PRs
+- CLAUDE.md no nível do usuário: verifica se `~/.claude/CLAUDE.md` contém o bloco de integração OMA (`<!-- OMA:START`).
+
+**Auto-reparo:** Se skills ou configurações ausentes forem detectadas, o `doctor` oferece instalá-las interativamente. Para configurações do Claude Code, ele pode aplicar valores recomendados automaticamente.
 
 **Exemplos:**
 ```bash
@@ -72,6 +87,9 @@ oma doctor --json
 
 # Pipe para jq para verificações específicas
 oma doctor --json | jq '.clis[] | select(.installed == false)'
+
+# Inspecionar a matriz de resolução de perfil
+oma doctor --profile
 ```
 
 ### update
@@ -86,7 +104,7 @@ oma update [-f | --force] [--ci]
 
 | Flag | Descrição |
 |:-----|:-----------|
-| `-f, --force` | Sobrescrever arquivos de config customizados (`oma-config.yaml`, `mcp.json`, diretórios `stack/`) |
+| `-f, --force` | Sobrescrever arquivos de config customizados pelo usuário (`oma-config.yaml`, `mcp.json`, diretórios `stack/`) |
 | `--ci` | Executar em modo CI não-interativo (pular prompts, saída em texto puro) |
 
 **O que faz:**
@@ -114,6 +132,43 @@ oma update --ci
 oma update --ci --force
 ```
 
+### link
+
+Regerar arquivos nativos de vendor a partir da fonte de verdade `.agents/` sem reinstalar.
+
+```
+oma link [vendors...]
+```
+
+**Exemplos:**
+
+```bash
+# Regerar todos os vendors configurados
+oma link
+
+# Regerar apenas arquivos de Claude e Codex
+oma link claude codex
+```
+
+**O que faz:**
+1. Reconstrói arquivos de agente nativos de vendor a partir de `.agents/agents/`
+2. Atualiza hooks e configurações locais para os vendors selecionados
+3. Regera os blocos de integração `CLAUDE.md`, `GEMINI.md` ou `AGENTS.md`
+4. Atualiza a vinculação MCP do Cursor e os symlinks de skills da CLI quando relevante
+
+Use isso após editar `.agents/agents/`, `.agents/workflows/`, `.agents/rules/` ou definições de hook.
+
+**Comportamento de modelo:**
+- O dispatch nativo same-vendor usa o modelo definido no arquivo de agente do vendor gerado.
+- O dispatch de fallback externo usa o `default_model` de cada vendor a partir de `.agents/skills/oma-orchestrator/config/cli-config.yaml`.
+
+**Comportamento de dispatch:**
+- Se o vendor de destino corresponder ao runtime atual e esse runtime suportar agentes nativos de role, o OMA usa dispatch nativo.
+- Caso contrário, o OMA recorre a `oma agent:spawn`.
+
+### setup (workflow)
+
+O workflow `/setup` (invocado dentro de uma sessão de agente) fornece configuração interativa de linguagem, instalações CLI, conexões MCP e mapeamento agente-CLI. Isso é diferente de `oma` (o instalador) — `/setup` configura uma instância já instalada.
 ---
 
 ## Monitoramento e Métricas
@@ -147,7 +202,7 @@ Iniciar o dashboard web.
 oma dashboard:web
 ```
 
-Inicia servidor HTTP em `http://localhost:9847` com conexão WebSocket para atualizações ao vivo.
+Inicia servidor HTTP em `http://localhost:9847` com conexão WebSocket para atualizações ao vivo. Abra a URL em um navegador para ver o dashboard.
 
 **Variáveis de ambiente:**
 
@@ -155,6 +210,15 @@ Inicia servidor HTTP em `http://localhost:9847` com conexão WebSocket para atua
 |:---------|:-------|:-----------|
 | `DASHBOARD_PORT` | `9847` | Porta para o servidor HTTP/WebSocket |
 | `MEMORIES_DIR` | `{cwd}/.serena/memories` | Caminho para o diretório de memories |
+
+**Exemplo:**
+```bash
+# Uso padrão
+oma dashboard:web
+
+# Porta customizada
+DASHBOARD_PORT=8080 oma dashboard:web
+```
 
 ### stats
 
@@ -194,6 +258,37 @@ oma stats --json
 oma stats --reset
 ```
 
+### recap
+
+Recapitular o histórico de conversas de ferramentas de IA entre sessões do Claude, Codex, Gemini, Qwen e Cursor.
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+**Opções:**
+
+| Flag | Descrição | Padrão |
+|:-----|:-----------|:--------|
+| `--window <period>` | Janela de tempo: `1d`, `3d`, `7d`, `2w`, `30d` | `1d` |
+| `--date <date>` | Data específica (`YYYY-MM-DD`); tem precedência sobre `--window` | |
+| `--tool <tools>` | Filtro separado por vírgula: `claude,codex,gemini,qwen,cursor` | todos |
+| `--top <n>` | Mostrar os top N projetos/tópicos | |
+| `--sort <metric>` | Ordenar por `count` ou `duration` | `count` |
+| `--mermaid` | Saída como gráfico Gantt do Mermaid | |
+| `--graph` | Abrir grafo interativo no navegador | |
+| `--json` / `--output <format>` | Saída legível por máquina | `text` |
+
+**Exemplos:**
+
+```bash
+oma recap                                     # Hoje (1d)
+oma recap --window 7d                         # Última semana
+oma recap --date 2026-04-20 --tool claude,codex
+oma recap --window 7d --mermaid > week.mmd
+oma recap --window 30d --graph                # Grafo interativo no navegador
+```
+
 ### retro
 
 Retrospectiva de engenharia com métricas e tendências.
@@ -220,7 +315,7 @@ oma retro [window] [--json] [--output <format>] [--interactive] [--compare]
 **O que mostra:**
 - Resumo tweetável (métricas em uma linha)
 - Tabela resumo (commits, arquivos alterados, linhas adicionadas/removidas, contribuidores)
-- Tendências vs última retro
+- Tendências vs última retro (se snapshot anterior existir)
 - Leaderboard de contribuidores
 - Distribuição de tempo de commits (histograma por hora)
 - Sessões de trabalho
@@ -275,7 +370,7 @@ oma agent:spawn <agent-id> <prompt> <session-id> [-m <vendor>] [-w <workspace>]
 | `-m, --model <vendor>` | Sobrescrita de vendor CLI: `gemini`, `claude`, `codex`, `qwen` |
 | `-w, --workspace <path>` | Diretório de trabalho para o agente. Auto-detectado de config monorepo se omitido. |
 
-**Ordem de resolução de vendor:** flag `--model` > `model_preset (per-agent overrides via `agents:`)` em oma-config.yaml > `default_cli` > `active_vendor` em cli-config.yaml > `gemini`.
+**Ordem de resolução de vendor:** flag `--model` > override `agents:` em `oma-config.yaml` > defaults de agente do `model_preset` ativo.
 
 **Resolução de prompt:** Se o argumento prompt for um caminho para um arquivo existente, o conteúdo do arquivo é usado como prompt. Caso contrário, o argumento é usado como texto inline. Protocolos de execução específicos do vendor são anexados automaticamente.
 
@@ -360,12 +455,12 @@ oma agent:parallel [tasks...] [-m <vendor>] [-i | --inline] [--no-wait]
 **Formato de arquivo YAML de tarefas:**
 ```yaml
 tasks:
-  - agent: backend
-    task: "Implement user API"
-    workspace: ./api           # opcional, auto-detectado se omitido
-  - agent: frontend
-    task: "Build user dashboard"
-    workspace: ./web
+- agent: backend
+task: "Implement user API"
+workspace: ./api # opcional, auto-detectado se omitido
+- agent: frontend
+task: "Build user dashboard"
+workspace: ./web
 ```
 
 **Formato inline de tarefas:** `agent:task` ou `agent:task:workspace` (workspace deve começar com `./` ou `/`).
@@ -444,7 +539,24 @@ Inicializar o schema de memória Serena.
 oma memory:init [--json] [--output <format>] [--force]
 ```
 
+**Opções:**
+
+| Flag | Descrição |
+|:-----|:-----------|
+| `--json` | Saída como JSON |
+| `--output <format>` | Formato de saída (`text` ou `json`) |
+| `--force` | Sobrescrever arquivos de schema vazios ou existentes |
+
 **O que faz:** Cria a estrutura do diretório `.serena/memories/` com arquivos iniciais de schema que as ferramentas de memória MCP usam para leitura e escrita de estado de agentes.
+
+**Exemplos:**
+```bash
+# Inicializar memória
+oma memory:init
+
+# Forçar sobrescrita do schema existente
+oma memory:init --force
+```
 
 ---
 
@@ -458,7 +570,20 @@ Verificar status de autenticação de todos os CLIs suportados.
 oma auth:status [--json] [--output <format>]
 ```
 
-**Verifica:** Gemini (API key), Claude (API key ou OAuth), Codex (API key), Qwen (API key).
+**Opções:**
+
+| Flag | Descrição |
+|:-----|:-----------|
+| `--json` | Saída como JSON |
+| `--output <format>` | Formato de saída (`text` ou `json`) |
+
+**Verifica:** GitHub CLI (`gh`), Gemini CLI, Claude CLI, Codex CLI, Qwen CLI.
+
+**Exemplos:**
+```bash
+oma auth:status
+oma auth:status --json
+```
 
 ### bridge
 
@@ -468,11 +593,23 @@ Bridge MCP stdio para transporte Streamable HTTP.
 oma bridge [url]
 ```
 
-**O que faz:** Atua como bridge de protocolo entre transporte MCP stdio (usado pelo Antigravity IDE) e transporte Streamable HTTP (usado pelo servidor Serena MCP).
+**Argumentos:**
+
+| Argumento | Obrigatório | Descrição |
+|:---------|:-----------|:-----------|
+| `url` | Não | URL do endpoint Streamable HTTP (ex: `http://localhost:12341/mcp`) |
+
+**O que faz:** Atua como bridge de protocolo entre transporte MCP stdio (usado pelo Antigravity IDE) e transporte Streamable HTTP (usado pelo servidor Serena MCP). Isso é necessário porque o Antigravity IDE não suporta transportes HTTP/SSE diretamente.
 
 **Arquitetura:**
 ```
 Antigravity IDE <-- stdio --> oma bridge <-- HTTP --> Serena Server
+```
+
+**Exemplo:**
+```bash
+# Bridge para servidor Serena local
+oma bridge http://localhost:12341/mcp
 ```
 
 ### verify
@@ -483,7 +620,53 @@ Verificar saída de subagente contra critérios esperados.
 oma verify <agent-type> [-w <workspace>] [--json] [--output <format>]
 ```
 
+**Argumentos:**
+
+| Argumento | Obrigatório | Descrição |
+|:---------|:-----------|:-----------|
+| `agent-type` | Sim | Um de: `backend`, `frontend`, `mobile`, `qa`, `debug`, `pm` |
+
+**Opções:**
+
+| Flag | Descrição | Padrão |
+|:-----|:-----------|:-------|
+| `-w, --workspace <path>` | Caminho do workspace a verificar | Diretório atual |
+| `--json` | Saída como JSON | |
+| `--output <format>` | Formato de saída (`text` ou `json`) | |
+
 **O que faz:** Executa o script de verificação para o tipo de agente especificado, verificando sucesso de build, resultados de teste e conformidade de escopo.
+
+**Verificações comuns (todos os tipos de agente):**
+- **Verificação de Escopo**: Lê os escopos de tarefa de `.agents/results/plan-{sessionId}.json`. Compara os arquivos alterados pelo `git diff` contra os padrões de escopo definidos. Falha se arquivos forem modificados fora do escopo atribuído ao agente.
+- **Charter Preflight**: Verifica se `result-{agent}.md` contém um bloco `CHARTER_CHECK:` corretamente preenchido sem placeholders não preenchidos.
+- **Hardcoded Secrets**: Escaneia arquivos `.py`, `.ts`, `.tsx`, `.js`, `.dart` em busca de padrões como `password = "..."`, `api_key = "..."` (exclui arquivos de teste/exemplo).
+- **Comentários TODO/FIXME**: Conta comentários `TODO`, `FIXME`, `HACK`, `XXX` (avisa se algum for encontrado).
+
+**Verificações específicas por agente:**
+
+| Tipo de Agente | Verificações Adicionais |
+|:-----------|:-----------------|
+| `backend` | Validação de sintaxe Python (`py_compile`), detecção de SQL injection (f-string + palavras-chave SQL), execução de testes Python (`pytest`) |
+| `frontend` | Compilação TypeScript (`tsc --noEmit`), detecção de inline style (`style={{`), uso de tipo `any` (falha se > 3), testes de frontend (`vitest`) |
+| `mobile` | Análise Flutter/Dart (`flutter analyze` ou `dart analyze`), testes Flutter (`flutter test`) |
+| `qa` | Verificação de self-check |
+| `debug` | Executa testes Python ou de frontend conforme o tipo de projeto detectado |
+| `pm` | Valida que `.agents/results/plan-{sessionId}.json` existe e é JSON válido |
+
+**Formato de saída:**
+Cada verificação reporta `PASS`, `FAIL`, `WARN` ou `SKIP` com uma mensagem de detalhe. O resultado geral é `ok: true` apenas se zero verificações falharem.
+
+**Exemplos:**
+```bash
+# Verificar saída de backend no workspace padrão
+oma verify backend
+
+# Verificar frontend em workspace específico
+oma verify frontend -w ./apps/web
+
+# Saída JSON para CI
+oma verify backend --json
+```
 
 ### cleanup
 
@@ -493,10 +676,34 @@ Limpar processos de subagentes órfãos e arquivos temporários.
 oma cleanup [--dry-run] [-y | --yes] [--json] [--output <format>]
 ```
 
+**Opções:**
+
+| Flag | Descrição |
+|:-----|:-----------|
+| `--dry-run` | Mostrar o que seria limpo sem fazer alterações |
+| `-y, --yes` | Pular prompts de confirmação e limpar tudo |
+| `--json` | Saída como JSON |
+| `--output <format>` | Formato de saída (`text` ou `json`) |
+
 **O que limpa:**
 - Arquivos PID órfãos no diretório temp do sistema (`/tmp/subagent-*.pid`).
 - Arquivos de log órfãos (`/tmp/subagent-*.log`).
 - Diretórios Gemini Antigravity (brain, implicit, knowledge) sob `.gemini/antigravity/`.
+
+**Exemplos:**
+```bash
+# Pré-visualizar o que seria limpo
+oma cleanup --dry-run
+
+# Limpar com prompts de confirmação
+oma cleanup
+
+# Limpar tudo sem prompts
+oma cleanup --yes
+
+# Saída JSON para automação
+oma cleanup --json
+```
 
 ### visualize
 
@@ -509,6 +716,167 @@ oma viz [--json] [--output <format>]
 
 `viz` é um alias integrado para `visualize`.
 
+**Opções:**
+
+| Flag | Descrição |
+|:-----|:-----------|
+| `--json` | Saída como JSON |
+| `--output <format>` | Formato de saída (`text` ou `json`) |
+
+**O que faz:** Analisa a estrutura do projeto e gera um grafo de dependências mostrando relações entre skills, agentes, workflows e recursos compartilhados.
+
+**Exemplos:**
+```bash
+oma visualize
+oma viz --json
+```
+
+### search
+
+Primitivas mecânicas de busca — fetch, metadata, RSS, mídia, código e trust scoring. Aliasado como `oma s`. Todos os subcomandos imprimem JSON em stdout (um objeto por linha, ou pretty-printed com `--pretty`).
+
+```
+oma search <subcommand> ...
+oma s <subcommand> ...
+```
+
+**Subcomandos:**
+
+| Subcomando | Propósito |
+|:-----------|:--------|
+| `fetch <url>` | Faz fetch da URL via pipeline de estratégias com auto-escalada (api → probe → impersonate → browser → archive) |
+| `api <url>` | Fetch via handler de API da plataforma correspondente (Phase 0) |
+| `api:search <query>` | Busca por palavra-chave em fan-out entre plataformas suportadas (`--platforms <list>`) |
+| `meta <url>` | Extrai metadata OGP / JSON-LD / Schema.org |
+| `rss <url>` | Descobre e parseia feed RSS / Atom |
+| `rss:google <query>` | Constrói uma URL de RSS do Google News para uma query |
+| `media <url>` | Extrai metadata de mídia via `yt-dlp` (1858 sites) |
+| `archive <url>` | Fetch via fallback AMP / archive.today / Wayback |
+| `trust <domain>` | Resolve nível/score de confiança para um domínio |
+| `code <query>` | Busca código via `gh` (GitHub) ou `glab` (GitLab) |
+| `doctor` | Verifica dependências (Chrome, `python3` + `curl_cffi`, `yt-dlp`, `gh`) |
+
+**Opções comuns em subcomandos de URL/query:**
+
+| Flag | Descrição | Padrão |
+|:-----|:-----------|:--------|
+| `--timeout <seconds>` | Timeout por estratégia | `15` (`30` para `media`) |
+| `--locale <value>` | Header `Accept-Language` | `en-US,en;q=0.9` |
+| `--pretty` | Saída JSON pretty-printed | `false` |
+
+**Extras de `fetch`:**
+
+| Flag | Descrição |
+|:-----|:-----------|
+| `--only <strategies>` | Estratégias separadas por vírgula a executar (`api,probe,impersonate,browser,archive`) |
+| `--skip <strategies>` | Estratégias separadas por vírgula a pular |
+| `--include-archive` | Anexa a estratégia archive como último fallback |
+
+**Extras de `media`:**
+
+| Flag | Descrição |
+|:-----|:-----------|
+| `--subs` | Escreve legendas |
+| `--sub-lang <list>` | Idiomas das legendas, separados por vírgula (padrão: `en`) |
+| `--format <spec>` | Especificação de formato do yt-dlp |
+
+**Extras de `code`:**
+
+| Flag | Descrição | Padrão |
+|:-----|:-----------|:--------|
+| `--host <github\|gitlab>` | Host | `github` |
+| `--language <lang>` | Filtro de linguagem | |
+| `--repo <owner/repo>` | Restringe a um repo | |
+| `--limit <n>` | Máximo de resultados | `20` |
+
+**Códigos de saída:** `0` ok, `1` erro, `2` blocked, `3` not-found, `4` invalid-input, `5` auth-required, `6` timeout.
+
+**Exemplos:**
+
+```bash
+# Fetch com auto-escalada
+oma search fetch https://example.com/article --pretty
+
+# Forçar uma única estratégia
+oma search fetch https://example.com --only browser
+
+# Busca cross-platform por palavra-chave via handlers de API
+oma search api:search "RAG patterns" --platforms hackernews,reddit
+
+# Encontrar o trust score de um repo
+oma search trust github.com
+
+# Busca de código (padrão GitHub)
+oma search code "useEffect cleanup" --language ts --limit 10
+
+# Verificar suas dependências locais
+oma search doctor
+```
+
+### image
+
+Geração de imagens com IA multi-vendor com dispatch paralelo ciente de autenticação. Aliasado como `oma img`.
+
+```
+oma image <subcommand> ...
+oma img <subcommand> ...
+```
+
+**Subcomandos:**
+
+| Subcomando | Propósito |
+|:-----------|:--------|
+| `generate <prompt...>` | Gera imagens via `pollinations` (flux/zimage, gratuito), `codex` (gpt-image-2 via ChatGPT OAuth) ou `gemini` (precisa de API key + cobrança, desabilitado por padrão) |
+| `doctor` | Verifica autenticação e status de instalação por vendor |
+| `list-vendors` | Lista os vendors registrados e modelos suportados |
+
+**Opções de `image generate`:**
+
+| Flag | Descrição | Padrão |
+|:-----|:-----------|:--------|
+| `--vendor <name>` | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all` | `auto` |
+| `--size <size>` | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto` | padrão do vendor |
+| `--quality <level>` | `low` \| `medium` \| `high` \| `auto` | padrão do vendor |
+| `-n, --count <n>` | Número de imagens (1..5) | `1` |
+| `--out <dir>` | Diretório de saída | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | Permite caminhos `--out` fora de `$PWD` | `false` |
+| `--model <name>` | Override de modelo específico do vendor | |
+| `--strategy <list>` | Ordem de fallback do Gemini, separada por vírgula (`mcp,stream,api`) | |
+| `--timeout <seconds>` | Timeout por imagem | padrão do vendor |
+| `-r, --reference <path>` | Imagem(ns) de referência; repetível (`-r a.png -r b.png`) ou separado por vírgula. Suportado em `codex` e `gemini`; rejeitado em `pollinations`. Cada uma ≤5MB PNG/JPEG/GIF/WebP (validado por magic-byte), máximo 10. | |
+| `-y, --yes` | Pular confirmação de custo | `false` |
+| `--no-prompt-in-manifest` | Armazena SHA256 do prompt em vez do texto bruto | `false` |
+| `--dry-run` | Imprime o plano e a estimativa de custo; não executa | `false` |
+| `--format <format>` | Formato de saída da CLI: `text` \| `json` | `text` |
+
+Cada execução escreve um `manifest.json` ao lado das imagens geradas registrando vendor, modelo, prompt (ou hash), tamanho, qualidade e custo.
+
+**Exemplos:**
+
+```bash
+# Geração gratuita, sem configuração
+oma image generate "minimalist sunrise over mountains"
+
+# Vendor + tamanho + contagem específicos, pular prompt de custo
+oma image generate "logo concept" --vendor codex --size 1024x1024 -n 3 -y
+
+# Todos os vendors em paralelo para comparação
+oma image generate "cat astronaut" --vendor all
+
+# Estimativa de custo sem gastar
+oma image generate "test prompt" --dry-run
+
+# Usar imagem de referência para guiar estilo / sujeito (codex ou gemini)
+oma image generate "same otter in dramatic lighting" --vendor codex -r ~/Downloads/otter.jpeg
+
+# Múltiplas referências (repetíveis ou separadas por vírgula)
+oma image generate "blend these styles" --vendor gemini -r a.png -r b.png
+oma image generate "blend these styles" --vendor gemini -r a.png,b.png
+
+# Verificação doctor por vendor
+oma image doctor --format json
+```
+
 ### star
 
 Dar estrela no oh-my-agent no GitHub.
@@ -517,7 +885,12 @@ Dar estrela no oh-my-agent no GitHub.
 oma star
 ```
 
-Requer CLI `gh` instalada e autenticada.
+Sem opções. Requer CLI `gh` instalada e autenticada. Dá estrela no repositório `first-fluke/oh-my-agent`.
+
+**Exemplo:**
+```bash
+oma star
+```
 
 ### describe
 
@@ -527,7 +900,25 @@ Descrever comandos CLI como JSON para introspecção em runtime.
 oma describe [command-path]
 ```
 
-**O que faz:** Gera um objeto JSON com nome, descrição, argumentos, opções e subcomandos do comando. Usado por agentes de IA para entender capacidades CLI disponíveis.
+**Argumentos:**
+
+| Argumento | Obrigatório | Descrição |
+|:---------|:-----------|:-----------|
+| `command-path` | Não | O comando a descrever. Se omitido, descreve o programa raiz. |
+
+**O que faz:** Gera um objeto JSON com o nome, descrição, argumentos, opções e subcomandos do comando. Usado por agentes de IA para entender as capacidades CLI disponíveis.
+
+**Exemplos:**
+```bash
+# Descrever todos os comandos
+oma describe
+
+# Descrever um comando específico
+oma describe agent:spawn
+
+# Descrever um subcomando
+oma describe "agent:parallel"
+```
 
 ### help
 
@@ -537,6 +928,8 @@ Mostrar informações de ajuda.
 oma help
 ```
 
+Exibe o texto completo de ajuda com todos os comandos disponíveis.
+
 ### version
 
 Mostrar número da versão.
@@ -544,6 +937,8 @@ Mostrar número da versão.
 ```
 oma version
 ```
+
+Imprime a versão atual da CLI e sai.
 
 ---
 

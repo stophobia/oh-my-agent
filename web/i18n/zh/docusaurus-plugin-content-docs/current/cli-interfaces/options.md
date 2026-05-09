@@ -69,6 +69,10 @@ oma retro    # 输出 JSON
 | `verify` | 是 | 是 | 每项检查的验证结果 |
 | `visualize` | 是 | 是 | 依赖图的 JSON 表示 |
 | `describe` | 始终 JSON | 不适用 | 始终输出 JSON（自省命令） |
+| `recap` | 是 | 是 | 按工具/会话归档的对话历史 |
+| `export` | 是 | 是 | 导出状态和目标路径 |
+| `image generate` / `image doctor` / `image list-vendors` | `--format json` | 不适用 | 使用 `--format json`，而不是 `--json` |
+| `search ...` | 始终 JSON | 不适用 | 所有 `search` 子命令均流式输出 JSON；可用 `--pretty` 便于阅读 |
 
 ---
 
@@ -208,6 +212,84 @@ tasks:
   - agent: frontend
     task: "Build user dashboard"
 ```
+
+### recap
+
+```
+oma recap [--window <period>] [--date <date>] [--tool <tools>] [--top <n>] [--sort <metric>] [--mermaid] [--graph] [--json] [--output <format>]
+```
+
+| 标志 | 说明 | 默认值 |
+|:-----|:-----|:-------|
+| `--window <period>` | 时间窗口：`1d`、`3d`、`7d`、`2w`、`30d`。设置 `--date` 时该参数被忽略。 | `1d` |
+| `--date <date>` | 指定日期（`YYYY-MM-DD`），优先级高于 `--window`。 | |
+| `--tool <tools>` | 按工具过滤会话，逗号分隔：`claude`、`codex`、`gemini`、`qwen`、`cursor`。 | 全部工具 |
+| `--top <n>` | 仅显示摘要中前 N 个项目/主题。 | 不限 |
+| `--sort <metric>` | 按 `count` 或 `duration` 排序会话。 | `count` |
+| `--mermaid` | 输出 Mermaid 甘特图，而非默认摘要。 | `false` |
+| `--graph` | 在浏览器中打开交互式图表。与 `--mermaid` 互斥。 | `false` |
+
+### export
+
+```
+oma export <format> [-d <path>] [--json] [--output <format>]
+```
+
+| 标志 | 缩写 | 说明 | 默认值 |
+|:-----|:-----|:-----|:-------|
+| `--dir <path>` | `-d` | 写入导出规则的目标目录。 | `process.cwd()` |
+
+**支持的格式：** `cursor`（基于已安装的技能写入 `.cursor/rules` 文件）。
+
+### search
+
+```
+oma search <subcommand> [...]
+```
+
+`search` 命令组自带 JSON 输出（不接受 `--json` / `--output` 标志）。在 URL/查询子命令上可用 `--pretty` 美化结果。子命令选项如下：
+
+| 子命令 | 关键选项 |
+|:-------|:--------|
+| `fetch <url>` | `--only`、`--skip`、`--include-archive`、`--timeout`、`--locale`、`--pretty` |
+| `api <url>` / `meta <url>` / `rss <url>` / `archive <url>` | `--timeout`、`--locale`、`--pretty` |
+| `api:search <query>` | `--platforms <list>`、`--timeout`、`--locale`、`--pretty` |
+| `rss:google <query>` | `--locale`（默认 `en-US`） |
+| `media <url>` | `--subs`、`--sub-lang <list>`（默认 `en`）、`--format <spec>`、`--timeout`（默认 `30`）、`--pretty` |
+| `code <query>` | `--host <github\|gitlab>`（默认 `github`）、`--language`、`--repo`、`--limit`（默认 `20`）、`--pretty` |
+| `trust <domain>` | `--pretty` |
+| `doctor` | 无；对 Chrome / `python3 curl_cffi` / `yt-dlp` / `gh` 执行二进制检查 |
+
+**退出码：** `0` 成功、`1` 错误、`2` 阻塞、`3` 未找到、`4` 无效输入、`5` 需要认证、`6` 超时。在脚本中可据此区分临时阻塞与无效输入。
+
+### image
+
+```
+oma image <subcommand> [...]
+```
+
+输出格式由各子命令的 `--format <text|json>` 控制（不使用共享的 `--json` 标志）。
+
+`image generate` 接受：
+
+| 标志 | 缩写 | 说明 | 默认值 |
+|:-----|:-----|:-----|:-------|
+| `--vendor <name>` | | `auto` \| `pollinations` \| `codex` \| `gemini` \| `all`。`auto` 会从 `image-config.yaml` 与可用认证中解析。 | `auto` |
+| `--size <size>` | | `1024x1024` \| `1024x1536` \| `1536x1024` \| `auto`。 | 供应商默认 |
+| `--quality <level>` | | `low` \| `medium` \| `high` \| `auto`。 | 供应商默认 |
+| `--count <n>` | `-n` | 图片数量，1..5。 | `1` |
+| `--out <dir>` | | 输出目录。除非设置 `--allow-external-out`，否则必须位于 `$PWD` 内部。 | `.agents/results/images/{timestamp}/` |
+| `--allow-external-out` | | 允许 `--out` 路径位于 `$PWD` 外部。 | `false` |
+| `--model <name>` | | 供应商特定的模型覆盖（如 `gpt-image-2`、`flux`、`imagen-4`）。 | 供应商默认 |
+| `--strategy <list>` | | Gemini 回退顺序，逗号分隔，可选 `mcp`、`stream`、`api`。 | 供应商默认 |
+| `--timeout <seconds>` | | 单张图片超时。 | 供应商默认 |
+| `--reference <path>` | `-r` | 用于风格/主题迁移的参考图。可重复（`-r a.png -r b.png`）或逗号分隔。校验大小（≤5MB）、格式（通过魔数识别 PNG/JPEG/GIF/WebP）和数量（≤10）。`codex`（向 `codex exec` 传 `-i`）和 `gemini`（内联 base64 `inlineData`）支持，`pollinations` 拒绝并以退出码 4 结束。 | |
+| `--yes` | `-y` | 跳过费用确认提示。 | `false` |
+| `--no-prompt-in-manifest` | | 在 `manifest.json` 中存储提示词的 SHA256，而非原文。 | `false` |
+| `--dry-run` | | 仅打印计划与费用估算，不执行。 | `false` |
+| `--format <format>` | | `text` \| `json`。 | `text` |
+
+`image doctor` 与 `image list-vendors` 仅接受 `--format <text|json>`。
 
 ### memory:init
 

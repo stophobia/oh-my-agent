@@ -126,49 +126,28 @@ Nem todos os CLIs de IA performam igualmente em todos os domínios. oh-my-agent 
 
 ```yaml
 # .agents/oma-config.yaml
-
-# Idioma de resposta
 language: en
+model_preset: antigravity   # mixed: Claude para QA/PM, Codex para implementação, Gemini para o resto
 
-# Formato de data para relatórios
-date_format: "YYYY-MM-DD"
-
-# Fuso horário para timestamps
-timezone: "Asia/Seoul"
-
-# CLI padrão (usado quando não existe mapeamento específico de agente)
-default_cli: gemini
-
-# Roteamento de CLI por agente
-model_preset (per-agent overrides via `agents:`):
-  frontend: claude       # Raciocínio complexo de UI, composição de componentes
-  backend: gemini        # Scaffolding rápido de API, geração de CRUD
-  mobile: gemini         # Geração rápida de código Flutter
-  db: gemini             # Design rápido de schema
-  pm: gemini             # Decomposição rápida de tarefas
-  qa: claude             # Revisão minuciosa de segurança e acessibilidade
-  debug: claude          # Análise profunda de causa raiz, rastreamento de símbolos
-  design: claude         # Decisões nuançadas de design, detecção de anti-padrões
-  tf-infra: gemini       # Geração de HCL
-  dev-workflow: gemini   # Configuração de task runner
-  translator: claude     # Tradução nuançada com sensibilidade cultural
-  orchestrator: gemini   # Coordenação rápida
-  commit: gemini         # Geração simples de mensagem de commit
+# Override de agentes específicos por cima do preset
+agents:
+  frontend: { model: anthropic/claude-sonnet-4-6 }
+  backend:  { model: openai/gpt-5.5, effort: high }
 ```
+
+Presets built-in: `claude-only`, `codex-only`, `gemini-only`, `qwen-only`, `antigravity`. Veja [Per-Agent Models](../guide/per-agent-models.md) para detalhes.
 
 ### Prioridade de Resolução de Vendor
 
-Quando `oma agent:spawn` determina qual CLI usar, segue esta prioridade (maior vence):
+Quando `oma agent:spawn` determina qual CLI usar:
 
 | Prioridade | Fonte | Exemplo |
 |-----------|-------|---------|
 | 1 (maior) | Flag `--model` | `oma agent:spawn backend "task" session-01 -m claude` |
-| 2 | `model_preset (per-agent overrides via `agents:`)` | `model_preset (per-agent overrides via `agents:`).backend: gemini` em oma-config.yaml |
-| 3 | `default_cli` | `default_cli: gemini` em oma-config.yaml |
-| 4 | `active_vendor` | Configuração legada `cli-config.yaml` |
-| 5 (menor) | Fallback codificado | `gemini` |
+| 2 | Override `agents:` em `oma-config.yaml` | `agents: { backend: { model: openai/gpt-5.5 } }` |
+| 3 | Defaults de agente do `model_preset` ativo | lookup do preset para o role do agente |
 
-Isso significa que uma flag `--model` sempre vence. Se nenhuma flag é fornecida, o sistema verifica mapeamento específico do agente, depois o padrão, depois config legada, e finalmente recorre a Gemini.
+A flag `--model` sempre vence. Se nenhuma flag é fornecida, o sistema verifica os overrides de `agents:` e depois os defaults do preset.
 
 ---
 

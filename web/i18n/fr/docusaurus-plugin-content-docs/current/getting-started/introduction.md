@@ -168,6 +168,43 @@ Pour les requêtes complexes qui couvrent plusieurs domaines, le routage suit de
 
 ---
 
+## Barre d'état HUD
+
+Lorsqu'il s'exécute dans Claude Code, oh-my-agent affiche un indicateur d'état persistant `[OMA]` dans la barre d'état, qui montre :
+- Le nom du modèle (par exemple Opus, Sonnet)
+- L'utilisation du contexte avec un code couleur (vert &lt; 70 %, jaune 70-85 %, rouge &gt; 85 %)
+- L'état du workflow actif (si un workflow persistant est en cours)
+
+Le HUD est alimenté par `.claude/hooks/hud.ts` via la fonctionnalité `statusLine` de Claude Code.
+
+---
+
+## Détection automatique des workflows
+
+Vous n'avez pas besoin de taper `/command` pour déclencher un workflow. Le hook `UserPromptSubmit` de oh-my-agent analyse votre saisie en langage naturel à partir des déclencheurs définis dans `.claude/hooks/triggers.json`, et prend en charge 11 langues (anglais, coréen, japonais, chinois, espagnol, français, allemand, portugais, russe, néerlandais, polonais).
+
+- **Saisie actionnable** (par exemple « plan the auth feature ») → charge automatiquement le workflow
+- **Saisie informationnelle** (par exemple « what is orchestrate? ») → filtrée, aucun workflow déclenché
+- **`/command` explicite** → le hook ignore la détection pour éviter les doublons
+- **Workflows persistants** → le contexte est réinjecté à chaque message jusqu'à ce que vous disiez « workflow done »
+
+---
+
+## Prise en charge multi-fournisseurs
+
+oh-my-agent ne se limite pas à Claude Code. Le système de hooks prend en charge :
+
+| Fournisseur | Intégration |
+|-------------|-------------|
+| **Claude Code** | Hooks natifs (`UserPromptSubmit`, `Notification`, `statusLine`) |
+| **Gemini CLI** | Compétences chargées automatiquement depuis `.agents/skills/`, spawn d'agents via `oma agent:spawn` |
+| **Codex CLI** | Compétences chargées automatiquement, requêtes parallèles arbitrées par le modèle |
+| **Qwen Code** | Hooks pris en charge pour la détection de workflows |
+
+La détection du fournisseur est automatique : les agents adaptent leur méthode de spawn en fonction de l'environnement d'exécution détecté.
+
+---
+
 ## Et ensuite
 
 - **[Installation](./installation.md)** -- Trois méthodes d'installation, presets, configuration CLI et vérification

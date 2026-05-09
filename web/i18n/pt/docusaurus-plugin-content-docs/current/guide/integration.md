@@ -162,15 +162,10 @@ cat > /path/to/your/project/.agents/oma-config.yaml << 'EOF'
 language: en
 date_format: ISO
 timezone: UTC
-default_cli: gemini
+model_preset: gemini-only
 
-model_preset (per-agent overrides via `agents:`):
-  frontend: gemini
-  backend: gemini
-  mobile: gemini
-  qa: gemini
-  debug: gemini
-  pm: gemini
+agents:
+  qa:    { model: anthropic/claude-sonnet-4-6 }
 EOF
 ```
 
@@ -339,6 +334,48 @@ O instalador escaneia ferramentas concorrentes e oferece removê-las para evitar
 
 O instalador baixa o tarball de release mais recente dos releases do GitHub do oh-my-agent. Este tarball contém o diretório `.agents/` completo com todas as skills, recursos compartilhados, workflows, configs e definições de agentes.
 
-### 4-11. Instalação de Recursos, Workflows, Configs, Skills, Adaptações de Vendor, Symlinks CLI, Workflows Globais, Configuração Git Rerere + MCP
+### 4. Instalação de Recursos Compartilhados
 
-Cada etapa instala um aspecto específico do framework, preservando configs existentes a menos que `--force` seja usado.
+`installShared()` copia o diretório `_shared/` para `.agents/skills/_shared/`. Inclui:
+
+- `core/` — Roteamento de skills, carregamento de contexto, estrutura de prompt, princípios de qualidade, detecção de vendor, contratos de API.
+- `runtime/` — Protocolo de memória, protocolos de execução por vendor.
+- `conditional/` — Recursos carregados apenas quando condições específicas são atendidas (quality score, exploration loop).
+
+### 5. Instalação de Workflows
+
+`installWorkflows()` copia todos os arquivos de workflow para `.agents/workflows/`. Estas são as definições para `/orchestrate`, `/work`, `/ultrawork`, `/plan`, `/brainstorm`, `/deepinit`, `/review`, `/debug`, `/design`, `/scm`, `/tools` e `/stack-set`.
+
+### 6. Instalação de Configs
+
+`installConfigs()` copia arquivos de configuração padrão para `.agents/config/`, incluindo `oma-config.yaml` e `mcp.json`. Se estes arquivos já existem, são preservados (não sobrescritos) a menos que `--force` seja usado.
+
+### 7. Instalação de Skills
+
+Para cada skill selecionada, `installSkill()` copia o diretório da skill para `.agents/skills/{skill-name}/`. Se uma variante foi selecionada (ex: Python para backend), também configura o diretório `stack/` com recursos específicos da linguagem.
+
+### 8. Adaptações de Vendor
+
+`installVendorAdaptations()` instala arquivos específicos de IDE para todos os vendors suportados (Claude, Codex, Gemini, Qwen):
+
+- Definições de agentes (`.claude/agents/*.md`, `.codex/agents/*.toml`, `.gemini/agents/*.md`)
+- Configurações de hook (`.claude/hooks/`)
+- Arquivos de settings e docs de integração de vendor (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`)
+
+### 9. Symlinks CLI
+
+`createCliSymlinks()` cria symlinks dos diretórios específicos de IDE para o SSOT:
+
+- `.claude/skills/{skill}` -> `../../.agents/skills/{skill}`
+- `.claude/skills/{workflow}.md` -> `../../.agents/workflows/{workflow}.md`
+- `.github/skills/{skill}` -> `../../.agents/skills/{skill}` (se Copilot habilitado)
+
+Arquivos nativos de agente por vendor são gerados a partir de `.agents/agents/` por `oma link`, `oma install` ou `oma update`, em vez de symlinkados diretamente.
+
+### 10. Workflows Globais
+
+`installGlobalWorkflows()` instala arquivos de workflow que podem ser necessários globalmente (fora do diretório do projeto).
+
+### 11. Git Rerere + Configuração MCP
+
+Conforme descrito no caminho CLI acima, o instalador opcionalmente configura git rerere e settings de MCP.
