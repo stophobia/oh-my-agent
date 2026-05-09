@@ -1,7 +1,7 @@
 {
   "name": "oh-my-agent",
   "version": "6.20.0",
-  "releaseDate": "2026-05-09T01:39:32.220Z",
+  "releaseDate": "2026-05-09T01:47:45.553Z",
   "repository": "https://github.com/first-fluke/oh-my-agent",
   "files": [
     {
@@ -85,6 +85,11 @@
       "size": 1564
     },
     {
+      "path": ".agents/hooks/core/fs-utils.ts",
+      "sha256": "7e32d5ee1df8cd973621c6380ed537459e0be91baffaededbb62fbcb23a62924",
+      "size": 346
+    },
+    {
       "path": ".agents/hooks/core/hud.ts",
       "sha256": "6dece44c94d0d50dfe5e7184375b5cc9eb3d404ec9ebb3eed0e3891d6e20b94d",
       "size": 5715
@@ -101,8 +106,8 @@
     },
     {
       "path": ".agents/hooks/core/skill-injector.ts",
-      "sha256": "eeb3533d7e917e46619a14c3601d58cfb854b129ce5122f710ac069b0aa8074e",
-      "size": 16272
+      "sha256": "920a67d2d2c1e0e05e43cffc096231c09e745bf5c67c6eac5ab6317da32139c2",
+      "size": 16408
     },
     {
       "path": ".agents/hooks/core/test-filter.ts",
@@ -1461,6 +1466,6 @@
   "metadata": {
     "skillCount": 25,
     "workflowCount": 18,
-    "totalFiles": 290
+    "totalFiles": 291
   }
 }
