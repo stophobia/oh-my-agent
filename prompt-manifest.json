@@ -1,7 +1,7 @@
 {
   "name": "oh-my-agent",
   "version": "6.19.0",
-  "releaseDate": "2026-05-09T01:22:38.896Z",
+  "releaseDate": "2026-05-09T01:36:01.005Z",
   "repository": "https://github.com/first-fluke/oh-my-agent",
   "files": [
     {
@@ -101,8 +101,8 @@
     },
     {
       "path": ".agents/hooks/core/skill-injector.ts",
-      "sha256": "796b5a3873f3516d520c4196bf2a7c48ee305b05c8c9212d7a7eadc588d3edb6",
-      "size": 15735
+      "sha256": "eeb3533d7e917e46619a14c3601d58cfb854b129ce5122f710ac069b0aa8074e",
+      "size": 16272
     },
     {
       "path": ".agents/hooks/core/test-filter.ts",
