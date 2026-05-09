@@ -15,7 +15,8 @@ import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
-const toPosix = (p: string): string => (sep === "/" ? p : p.split(sep).join("/"));
+const toPosix = (p: string): string =>
+  sep === "/" ? p : p.split(sep).join("/");
 
 export interface I18nDriftPair {
   source: string;
