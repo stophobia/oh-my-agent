@@ -119,6 +119,7 @@ Or use slash commands for structured workflows:
 | 3 | `/ralph` | Wraps `/ultrawork` in an independent verifier loop until criteria pass |
 | 4 | `/review` | Security + performance + accessibility audit |
 | 5 | `/debug` | Structured root-cause debugging |
+| 5 | `/docs` | Documentation drift verify + sync via `oma-docs` |
 | 6 | `/scm` | SCM + Git workflow and Conventional Commit support |
 
 **Auto-detection**: You don't even need slash commands — keywords like "architecture", "plan", "review", and "debug" in your message (in 11 languages!) auto-activate the right workflow.

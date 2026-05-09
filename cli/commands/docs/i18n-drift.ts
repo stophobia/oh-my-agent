@@ -191,7 +191,7 @@ export function detectI18nDrift(opts: DetectI18nDriftOptions): I18nDriftPair[] {
       };
       pairs.push({
         ...partial,
-        severity: classifySeverity({ ...partial, severity: "LOW" }),
+        severity: classifySeverity(partial),
       });
     }
   }
