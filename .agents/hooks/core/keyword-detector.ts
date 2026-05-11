@@ -25,6 +25,65 @@ import { resolveGitRoot } from "./fs-utils.ts";
 import { makePromptOutput } from "./hook-output.ts";
 import type { ModeState, Vendor } from "./types.ts";
 
+// ── Unicode normalization ─────────────────────────────────────
+
+/**
+ * Normalize text for keyword matching.
+ * NFKC converts fullwidth Latin characters produced by CJK IMEs
+ * (e.g. ｐａｒａｌｌｅｌ → parallel) to their ASCII equivalents,
+ * then lowercases the result.
+ *
+ * Placed here so that Task 3 (KEYWORD_SKIP_PREDICATES) and any
+ * future layers can import and reuse the same normalization path.
+ */
+export function normalizeForMatching(text: string): string {
+  return text.normalize("NFKC").toLowerCase();
+}
+
+// ── CLI Invocation Guard ──────────────────────────────────────
+
+/**
+ * Matches CLI invocations at the start of the prompt.
+ *
+ * Two tiers, because `claude`/`codex`/`opencode` are also natural-language
+ * addressees ("claude, review this code") whereas `oma`/`omc`/`omx`/`omo`
+ * have no natural English usage:
+ *
+ *   Tier 1 — Oma family: any prompt starting with `oma|omc|omx|omo` is treated
+ *   as a CLI invocation regardless of what follows.
+ *
+ *   Tier 2 — Generic vendor CLIs: `claude|codex|opencode` must be followed
+ *   by an explicit CLI signal (one of agent/auto/exec/run/spawn, a `--flag`,
+ *   or a `verb:noun` colon-namespaced subcommand). Bare natural-language
+ *   prompts like `claude review this` remain eligible for workflow triggers.
+ */
+export const CLI_INVOCATION_AT_START =
+  /^\s*\/?(?:(?:oma|omc|omx|omo)\b|(?:claude|codex|opencode)\s+(?:agent|auto|exec|run|spawn|--\S+|\S+:\S+))/i;
+
+/**
+ * Per-workflow skip predicates. A workflow listed here will be skipped when
+ * its predicate returns true for the (already-normalized) cleaned text.
+ * The map is intentionally empty at boot — populate it to add workflow-specific
+ * overrides without restructuring the matching loop.
+ */
+export const KEYWORD_SKIP_PREDICATES: Record<
+  string,
+  (text: string) => boolean
+> = {};
+
+/**
+ * Default predicate: skip ALL workflow triggers when the prompt starts with an
+ * oma/claude/codex/opencode CLI invocation. Applies to every workflow unless
+ * an explicit per-workflow predicate in KEYWORD_SKIP_PREDICATES overrides it.
+ *
+ * The regex is applied to the NFKC-lowercased `cleaned` text produced by
+ * normalizeForMatching. All brand names are ASCII so NFKC has no effect on
+ * them; the `^\s*` start-anchor is unaffected by normalization.
+ */
+export function shouldSkipAllWorkflows(text: string): boolean {
+  return CLI_INVOCATION_AT_START.test(text);
+}
+
 // ── Guard 1: UserPromptSubmit-only trigger ────────────────────
 // Hook event names that represent genuine user input (not agent responses)
 const VALID_USER_EVENTS = new Set([
@@ -266,7 +325,7 @@ export function buildPatterns(
     if (cjkScripts.includes(lang) || /[^\p{ASCII}]/u.test(kw)) {
       return new RegExp(escaped, "i");
     }
-    return new RegExp(`\\b${escaped}\\b`, "i");
+    return new RegExp(`(?:^|[^\\w-])${escaped}(?:$|[^\\w-])`, "i");
   });
 }
 
@@ -310,7 +369,7 @@ function buildInformationalPatterns(
   }
   return patterns.map((p) => {
     if (/[^\p{ASCII}]/u.test(p)) return new RegExp(escapeRegex(p), "i");
-    return new RegExp(`\\b${escapeRegex(p)}\\b`, "i");
+    return new RegExp(`(?:^|[^\\w-])${escapeRegex(p)}(?:$|[^\\w-])`, "i");
   });
 }
 
@@ -530,8 +589,10 @@ export function isDeactivationRequest(prompt: string, lang: string): boolean {
     ...(DEACTIVATION_PHRASES.en ?? []),
     ...(lang !== "en" ? (DEACTIVATION_PHRASES[lang] ?? []) : []),
   ];
-  const lower = prompt.toLowerCase();
-  return phrases.some((phrase) => lower.includes(phrase.toLowerCase()));
+  const normalized = normalizeForMatching(prompt);
+  return phrases.some((phrase) =>
+    normalized.includes(normalizeForMatching(phrase)),
+  );
 }
 
 export function deactivateAllPersistentModes(
@@ -591,7 +652,11 @@ async function main() {
   // Guard 2: Strip code blocks, inline code, and pasted system-echo blocks
   // before scanning for keywords. System echo stripping prevents oma's own
   // hook outputs (when pasted back into the prompt) from re-triggering.
-  const cleaned = stripSystemEchoes(stripCodeBlocks(prompt));
+  // NFKC normalization collapses fullwidth Latin from CJK IMEs onto ASCII
+  // so keyword regexes cannot be silently bypassed by ｐａｒａｌｌｅｌ-style input.
+  const cleaned = normalizeForMatching(
+    stripSystemEchoes(stripCodeBlocks(prompt)),
+  );
   const excluded = new Set(config.excludedWorkflows);
 
   // Guard 3: Load reinforcement suppression state
@@ -602,6 +667,16 @@ async function main() {
 
   for (const [workflow, def] of Object.entries(config.workflows)) {
     if (excluded.has(workflow)) continue;
+
+    // Global CLI-invocation guard: prompts that start with an oma/claude/codex/
+    // opencode CLI brand are tool invocations, not natural-language workflow
+    // requests. Skip silently to avoid false-positive matches on brand names.
+    if (shouldSkipAllWorkflows(cleaned)) continue;
+
+    // Per-workflow override: if a predicate is registered for this specific
+    // workflow, evaluate it and skip just this workflow when it returns true.
+    const workflowPredicate = KEYWORD_SKIP_PREDICATES[workflow];
+    if (workflowPredicate?.(cleaned)) continue;
 
     // Analytical questions should never trigger persistent workflows
     if (analytical && def.persistent) continue;

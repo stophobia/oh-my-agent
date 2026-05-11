@@ -30,6 +30,11 @@ const {
   isReinforcementSuppressed,
   recordKwTrigger,
   loadKwState,
+  // Task 3 — CLI invocation guard
+  CLI_INVOCATION_AT_START,
+  KEYWORD_SKIP_PREDICATES,
+  shouldSkipAllWorkflows,
+  normalizeForMatching,
 } = await import("../../.agents/hooks/core/keyword-detector.ts");
 
 describe("keyword-detector", () => {
@@ -67,16 +72,225 @@ describe("keyword-detector", () => {
       expect(patterns).toHaveLength(3);
     });
 
-    it("should use word boundaries for non-CJK languages", () => {
+    it("should use hyphen-rejecting boundaries for non-CJK languages", () => {
       const keywords = { "*": ["debug"], en: ["fix bug"] };
       const patterns = buildPatterns(keywords, "en", ["ko", "ja", "zh"]);
-      expect(patterns[0]?.source).toContain("\\b");
+      // (?:^|[^\w-]) ... (?:$|[^\w-]) — rejects hyphen as token edge
+      expect(patterns[0]?.source).toContain("[^\\w-]");
     });
 
     it("should not use word boundaries for CJK languages", () => {
       const keywords = { ko: ["디버그"] };
       const patterns = buildPatterns(keywords, "ko", ["ko", "ja", "zh"]);
-      expect(patterns[0]?.source).not.toContain("\\b");
+      expect(patterns[0]?.source).not.toContain("[^\\w-]");
+    });
+
+    it("rejects hyphen-suffixed false positives (code-review-bot)", () => {
+      const keywords = { "*": ["code-review"] };
+      const patterns = buildPatterns(keywords, "en", ["ko", "ja", "zh"]);
+      const re = patterns[0];
+      expect(re?.test("please do a code-review")).toBe(true);
+      expect(re?.test("code-review-bot ran")).toBe(false);
+      expect(re?.test("code-review-cleanup")).toBe(false);
+    });
+  });
+
+  describe("normalizeForMatching (NFKC)", () => {
+    it("collapses fullwidth Latin to ASCII", async () => {
+      const { normalizeForMatching } = await import(
+        "../../.agents/hooks/core/keyword-detector.ts"
+      );
+      expect(normalizeForMatching("ｐａｒａｌｌｅｌ")).toBe("parallel");
+      expect(normalizeForMatching("ｏｒｃｈｅｓｔｒａｔｅ")).toBe(
+        "orchestrate",
+      );
+    });
+
+    it("preserves native CJK characters", async () => {
+      const { normalizeForMatching } = await import(
+        "../../.agents/hooks/core/keyword-detector.ts"
+      );
+      expect(normalizeForMatching("자동 실행")).toBe("자동 실행");
+      expect(normalizeForMatching("オーケストレート")).toBe("オーケストレート");
+      expect(normalizeForMatching("自动执行")).toBe("自动执行");
+    });
+
+    it("lowercases ASCII", async () => {
+      const { normalizeForMatching } = await import(
+        "../../.agents/hooks/core/keyword-detector.ts"
+      );
+      expect(normalizeForMatching("ORCHESTRATE")).toBe("orchestrate");
+    });
+  });
+
+  // ── Task 3 — CLI Invocation Guard ───────────────────────────
+
+  describe("CLI_INVOCATION_AT_START", () => {
+    // Positive cases — these prompts ARE CLI invocations and must match the regex
+    it("matches: oma agent:spawn brainstorm", () => {
+      expect(
+        CLI_INVOCATION_AT_START.test('oma agent:spawn brainstorm "X"'),
+      ).toBe(true);
+    });
+
+    it("matches: omc auto", () => {
+      expect(CLI_INVOCATION_AT_START.test("omc auto")).toBe(true);
+    });
+
+    it("matches: claude agent test (explicit CLI verb)", () => {
+      expect(CLI_INVOCATION_AT_START.test("claude agent test")).toBe(true);
+    });
+
+    it("matches: claude --help (flag-prefixed)", () => {
+      expect(CLI_INVOCATION_AT_START.test("claude --help")).toBe(true);
+    });
+
+    it("does NOT match: claude code review (natural-language addressee)", () => {
+      expect(CLI_INVOCATION_AT_START.test("claude code review")).toBe(false);
+    });
+
+    it("does NOT match: claude review this code", () => {
+      expect(CLI_INVOCATION_AT_START.test("claude review this code")).toBe(
+        false,
+      );
+    });
+
+    it("does NOT match: codex output looks wrong", () => {
+      expect(CLI_INVOCATION_AT_START.test("codex output looks wrong")).toBe(
+        false,
+      );
+    });
+
+    it("does NOT match: opencode this feature (no CLI verb)", () => {
+      expect(CLI_INVOCATION_AT_START.test("opencode this feature")).toBe(false);
+    });
+
+    it("matches: codex exec --workflow ralph", () => {
+      expect(CLI_INVOCATION_AT_START.test("codex exec --workflow ralph")).toBe(
+        true,
+      );
+    });
+
+    it("matches: opencode run", () => {
+      expect(CLI_INVOCATION_AT_START.test("opencode run")).toBe(true);
+    });
+
+    it("matches: /oma:brainstorm (leading slash form)", () => {
+      expect(CLI_INVOCATION_AT_START.test("/oma:brainstorm")).toBe(true);
+    });
+
+    it("matches: omx with subcommand", () => {
+      expect(CLI_INVOCATION_AT_START.test("omx spawn")).toBe(true);
+    });
+
+    it("matches: omo run", () => {
+      expect(CLI_INVOCATION_AT_START.test("omo run")).toBe(true);
+    });
+
+    // Negative cases — these prompts contain brand names mid-sentence and must NOT match
+    it("does NOT match: brand appears mid-sentence (compare claude and codex)", () => {
+      expect(
+        CLI_INVOCATION_AT_START.test("compare claude and codex briefly"),
+      ).toBe(false);
+    });
+
+    it("does NOT match: natural language starting with 'please'", () => {
+      expect(
+        CLI_INVOCATION_AT_START.test("please help me brainstorm a feature"),
+      ).toBe(false);
+    });
+
+    it("does NOT match: plain keyword with no brand prefix", () => {
+      expect(CLI_INVOCATION_AT_START.test("orchestrate the deployment")).toBe(
+        false,
+      );
+    });
+
+    it("does NOT match: partial brand prefix substring (omitted)", () => {
+      // 'omaha' starts with 'oma' but the \b word-boundary stops it
+      expect(CLI_INVOCATION_AT_START.test("omaha brainstorm")).toBe(false);
+    });
+  });
+
+  describe("shouldSkipAllWorkflows", () => {
+    it("returns true for oma CLI invocation", () => {
+      expect(shouldSkipAllWorkflows('oma agent:spawn brainstorm "X"')).toBe(
+        true,
+      );
+    });
+
+    it("returns true for claude CLI invocation (verb-followed)", () => {
+      expect(shouldSkipAllWorkflows("claude agent test")).toBe(true);
+    });
+
+    it("returns false for natural-language claude addressee", () => {
+      expect(shouldSkipAllWorkflows("claude review this code")).toBe(false);
+    });
+
+    it("returns true for codex CLI invocation", () => {
+      expect(shouldSkipAllWorkflows("codex exec --workflow ralph")).toBe(true);
+    });
+
+    it("returns true for opencode CLI invocation", () => {
+      expect(shouldSkipAllWorkflows("opencode run")).toBe(true);
+    });
+
+    it("returns true for /oma:brainstorm slash form", () => {
+      expect(shouldSkipAllWorkflows("/oma:brainstorm")).toBe(true);
+    });
+
+    it("returns false for natural language starting with 'please'", () => {
+      expect(
+        shouldSkipAllWorkflows("please help me brainstorm a feature"),
+      ).toBe(false);
+    });
+
+    it("returns false when brand name appears mid-sentence", () => {
+      expect(shouldSkipAllWorkflows("compare claude and codex briefly")).toBe(
+        false,
+      );
+    });
+
+    it("returns false for plain workflow keyword", () => {
+      expect(shouldSkipAllWorkflows("ultrawork this task")).toBe(false);
+    });
+
+    it("KEYWORD_SKIP_PREDICATES map is initially empty (no per-workflow overrides)", () => {
+      expect(Object.keys(KEYWORD_SKIP_PREDICATES)).toHaveLength(0);
+    });
+  });
+
+  describe("CLI invocation guard — integration (matching loop)", () => {
+    // Verify end-to-end: the matching loop skips workflow detection when the
+    // cleaned prompt starts with a CLI brand, and fires normally otherwise.
+    // We drive this through the exported helpers rather than spawning main().
+
+    it("shouldSkipAllWorkflows blocks before patterns run — positive case", () => {
+      // A prompt starting with 'oma' would match 'oma' in 'oma agent:spawn orchestrate'
+      // but shouldSkipAllWorkflows must return true, preventing any trigger.
+      const cleaned = normalizeForMatching("oma agent:spawn orchestrate");
+      expect(shouldSkipAllWorkflows(cleaned)).toBe(true);
+    });
+
+    it("shouldSkipAllWorkflows does NOT block natural language — negative case", () => {
+      // 'orchestrate the build system' starts with 'orchestrate', not a CLI brand.
+      const cleaned = normalizeForMatching("orchestrate the build system");
+      expect(shouldSkipAllWorkflows(cleaned)).toBe(false);
+    });
+
+    it("NFKC normalization does not prevent CLI brand detection", () => {
+      // Fullwidth 'oma' would be collapsed by normalizeForMatching before the regex runs.
+      // Note: ｏｍａ in fullwidth NFKC collapses to 'oma'.
+      const cleaned = normalizeForMatching("ｏｍａ agent:spawn brainstorm");
+      // After normalization the string starts with 'oma'
+      expect(cleaned.startsWith("oma")).toBe(true);
+      expect(shouldSkipAllWorkflows(cleaned)).toBe(true);
+    });
+  });
+
+  describe("buildPatterns (placeholder anchor)", () => {
+    it("placeholder", () => {
+      expect(true).toBe(true);
     });
 
     it("should return empty array when no keywords match language", () => {
