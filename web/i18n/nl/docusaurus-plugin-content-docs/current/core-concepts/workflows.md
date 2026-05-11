@@ -241,6 +241,35 @@ Whitelist van zelfstandige naamwoorden (15): app, api, service, server, cli, too
 
 ---
 
+### /deepsec
+
+**Beschrijving:** Stuurt de `oma-deepsec`-skill end-to-end aan. Installeert `.deepsec/`, kalibreert kosten, draait scan/process/triage/revalidate/export-passes, beveiligt PR's via `process --diff`, schrijft custom matchers en routeert findings naar gespecialiseerde agents. Inline-uitvoering (geen subagent-spawns).
+
+**Triggertrefwoorden:** Universeel: "/deepsec", "deepsec workflow"; Engels: "run deepsec", "deepsec scan this repo", "scan repo with deepsec", "deepsec pr review", "deepsec ci gate", "deepsec triage", "deepsec matchers".
+
+**Stappen:**
+1. **Stap 1, Skill laden:** Lees `.agents/skills/oma-deepsec/SKILL.md` en laad alleen de resource-bestanden die bij de afgeleide intent horen (`setup.md`, `scanning.md`, `pr-review.md`, `matchers.md`, `triage.md`, `config.md`). Als `.deepsec/` al in de repo-root bestaat, behandel de run incrementeel en draai nooit opnieuw `init`.
+2. **Stap 2, Intent classificeren:** Los op naar precies één van `setup`, `scan`, `pr-review`, `matchers`, `triage`, `config`, `troubleshoot`. Multi-intent prompts worden sequentieel uitgevoerd. Voeg `setup` toe vóór elke AI-aanroep-intent als `.deepsec/` ontbreekt.
+3. **Stap 3, Agentkeuze bevestigen:** Bevestig vóór elke betaalde aanroep `claude` (sterkste redenering, duurst) versus `codex` (read-only sandbox, goedkoper). Sla over als de gebruiker er één noemde, `deepsec.config.ts` `defaultAgent` vastlegt of de keuze is gedelegeerd.
+4. **Stap 4, Afgeleide intent uitvoeren:**
+   - **4A `setup`:** `bunx deepsec init`, `bun install`, `.env.local` bewerken, verifiëren met `scan --limit 20` + `process --limit 5`, daarna `data/<id>/INFO.md` schrijven (50-100 regels, projectspecifiek). **Vereist gebruikersbevestiging op `INFO.md`.**
+   - **4B `scan`:** Scan -> kalibreren met `--limit 50 --concurrency 5` -> kostenextrapolatie melden (expliciete gebruikersgoedkeuring vereist) -> volledige `process` -> `triage --severity HIGH` + `revalidate --min-severity HIGH` -> `export --format md-dir` + `metrics`.
+   - **4C `pr-review`:** Direct-modus `process --diff origin/${BASE_REF} --comment-out comment.md`. Publiceer het two-job CI-patroon (`analyze` zonder `pull-requests: write`, `comment` consumeert alleen het opgeschoonde artefact). Exit `1` = ten minste één netto nieuwe finding.
+   - **4D `matchers`:** Doorloop `data/<id>/files/` voor entry-pointgaten, schrijf per-slug matchers naar `.deepsec/matchers/<slug>.ts` op de juiste ruisniveau (`precise` / `normal` / `noisy`), koppel via `.deepsec/deepsec.config.ts` en verifieer met `scan --matchers`.
+   - **4E `triage`:** `triage --severity HIGH` -> `revalidate --min-severity HIGH` -> filter export naar alleen `true-positive` / `uncertain`. Noteer terugkerende FP-vormen voor de volgende `INFO.md`-revisie.
+   - **4F `config` / `troubleshoot`:** Pas de symptoomtabel uit `resources/config.md` toe.
+5. **Stap 5, Samenvatten en routeren:** Maak een run-samenvatting (project id, pass-type, agent/model, gescande bestanden, findings, TP na revalidate, kosten, wall time, stopcondities). Routeer follow-ups op basis van de **laag van het kwetsbare bestand** (backend -> `oma-backend`, frontend -> `oma-frontend`, mobile -> `oma-mobile`, IaC -> `oma-tf-infra`, DB -> `oma-db`, CI -> `oma-dev-workflow`, docs-drift -> `oma-docs`, entry-pointgat -> terug naar stap 4D). Bij dubbelzinnige laag of `revalidation.verdict === "uncertain"` eerst `oma-debug` als triage-hop.
+6. **Stap 6, Stopcondities:** Beëindig bij voltooide intent + stap 5-samenvatting, blokkerende preconditie (ontbrekende credential, geweigerde `INFO.md`) of quotastop met een veilig resume-commando.
+
+**Gelezen bestanden:** `.agents/skills/oma-deepsec/SKILL.md`, `.agents/skills/oma-deepsec/resources/*.md` (intent-scoped), `data/<id>/INFO.md`, `data/<id>/files/`, `deepsec.config.ts`.
+**Geschreven bestanden:** `.deepsec/` (bij `setup`), `.env.local` (gitignored), `data/<id>/INFO.md`, `.deepsec/matchers/<slug>.ts`, `findings/` (bij `export`), `comment.md` (bij `pr-review`).
+
+**Regels:** Wijzig in deze workflow geen productbroncode (laat specialisten dat doen). Echo of commit geen credentials (`vck_…`, `sk-ant-…`, OIDC-tokens). Verleen geen `pull-requests: write` aan een CI-job die PR-gestuurde code uitvoert. Hervatten, niet resetten: bij onderbreking dezelfde opdracht opnieuw draaien; nooit `rm -rf data/<id>/` zonder expliciete gebruikersinstructie.
+
+**Wanneer te gebruiken:** Agent-powered kwetsbaarheidsscan van een repo, CI/PR-beveiligingsgating via `process --diff`, schrijven van projectspecifieke matchers voor entry-pointdekking, triëren van bestaande findings om FP's te verminderen.
+
+---
+
 ### /debug
 
 **Beschrijving:** Gestructureerde bugdiagnose en -oplossing met regressietestschrijven en vergelijkbare patronenscanning.

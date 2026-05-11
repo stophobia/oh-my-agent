@@ -275,6 +275,44 @@ description: oh-my-agent 16개 워크플로우 완전 레퍼런스입니다. 슬
 
 **선택적 수정-검증 루프** (`--fix`): QA 보고서 후 CRITICAL/HIGH 이슈를 수정하기 위해 도메인 에이전트를 스폰, QA 재실행, 최대 3회 반복.
 
+**위임:** 범위가 클 경우 2-7단계를 스폰된 QA 에이전트 서브에이전트에 위임합니다.
+
+---
+
+### /deepsec
+
+**설명:** `oma-deepsec` 스킬을 엔드 투 엔드로 구동합니다. `.deepsec/` 설치, 비용 보정, scan/process/triage/revalidate/export 패스 실행, `process --diff`를 통한 PR 게이팅, 커스텀 매처 작성, 발견 사항을 전문 에이전트로 라우팅합니다. 인라인 실행(서브에이전트 스폰 없음).
+
+**트리거 키워드:**
+| 언어 | 키워드 |
+|----------|----------|
+| 공통 | "/deepsec", "deepsec workflow" |
+| 영어 | "run deepsec", "deepsec scan this repo", "scan repo with deepsec", "deepsec pr review", "deepsec ci gate", "deepsec triage", "deepsec matchers" |
+| 한국어 | "딥섹 워크플로우", "딥섹 실행", "딥섹 스캔", "딥섹으로 검사", "딥섹 PR 리뷰", "딥섹 CI 게이트" |
+| 일본어 | "ディープセック実行", "deepsecワークフロー", "deepsecでスキャン", "deepsec PRレビュー" |
+| 중국어 | "运行 deepsec", "deepsec 工作流", "用 deepsec 扫描", "deepsec PR 审查" |
+
+**단계:**
+1. **1단계, 스킬 로드:** `.agents/skills/oma-deepsec/SKILL.md`를 읽은 뒤, 해석된 인텐트에 해당하는 리소스 파일만 로드합니다 (`setup.md`, `scanning.md`, `pr-review.md`, `matchers.md`, `triage.md`, `config.md`). 저장소 루트에 `.deepsec/`이 이미 있으면 증분 실행으로 처리하고 절대 다시 `init`하지 않습니다.
+2. **2단계, 인텐트 분류:** `setup`, `scan`, `pr-review`, `matchers`, `triage`, `config`, `troubleshoot` 중 정확히 하나로 해석합니다. 다중 인텐트 프롬프트는 순차 실행합니다. `.deepsec/`이 없으면 AI 호출 인텐트 앞에 `setup`을 삽입합니다.
+3. **3단계, 에이전트 선택 확인:** 유료 호출 전에 `claude` (최강 추론, 가장 비쌈) 와 `codex` (읽기 전용 샌드박스, 더 저렴) 중 확인합니다. 사용자가 지정했거나, `deepsec.config.ts`에 `defaultAgent`가 고정되었거나, 사용자가 선택을 위임한 경우 생략합니다.
+4. **4단계, 해석된 인텐트 실행:**
+   - **4A `setup`:** `bunx deepsec init`, `bun install`, `.env.local` 편집, `scan --limit 20` + `process --limit 5`로 검증한 뒤 `data/<id>/INFO.md` 작성(50-100줄, 프로젝트 특화). **`INFO.md`에 대한 사용자 확인 필요.**
+   - **4B `scan`:** Scan -> `--limit 50 --concurrency 5`로 보정 -> 비용 외삽 보고(명시적 사용자 승인 필요) -> 전체 `process` -> `triage --severity HIGH` + `revalidate --min-severity HIGH` -> `export --format md-dir` + `metrics`.
+   - **4C `pr-review`:** 다이렉트 모드 `process --diff origin/${BASE_REF} --comment-out comment.md`. 2-잡 CI 패턴 발행(`analyze`는 `pull-requests: write` 없이, `comment`는 정제된 아티팩트만 소비). 종료 코드 `1` = 신규 발견 1건 이상.
+   - **4D `matchers`:** `data/<id>/files/`를 순회하며 엔트리 포인트 누락을 찾아 슬러그별 매처를 `.deepsec/matchers/<slug>.ts`에 적절한 노이즈 등급(`precise` / `normal` / `noisy`)으로 작성하고, `.deepsec/deepsec.config.ts`로 연결한 뒤 `scan --matchers`로 검증합니다.
+   - **4E `triage`:** `triage --severity HIGH` -> `revalidate --min-severity HIGH` -> export를 `true-positive` / `uncertain`만으로 필터링합니다. 반복되는 FP 형태는 다음 `INFO.md` 개정에 메모합니다.
+   - **4F `config` / `troubleshoot`:** `resources/config.md`의 증상 테이블을 적용합니다.
+5. **5단계, 요약 및 라우팅:** 실행 요약을 생성합니다(프로젝트 id, 패스 유형, agent/model, 스캔 파일 수, 발견 건수, revalidate 후 TP, 비용, 경과 시간, 정지 조건). 후속 작업은 **취약 파일의 레이어**에 따라 라우팅합니다 (backend -> `oma-backend`, frontend -> `oma-frontend`, mobile -> `oma-mobile`, IaC -> `oma-tf-infra`, DB -> `oma-db`, CI -> `oma-dev-workflow`, 문서 드리프트 -> `oma-docs`, 엔트리 포인트 누락 -> 4D 재진입). 레이어가 모호하거나 `revalidation.verdict === "uncertain"`인 경우 트리아지 홉으로 `oma-debug`를 먼저 실행합니다.
+6. **6단계, 정지 조건:** 완료된 인텐트 + 5단계 요약, 차단 사전 조건(자격 증명 누락, `INFO.md` 거부), 또는 안전 재개 명령과 함께 표면화된 쿼터 정지에서 종료합니다.
+
+**읽는 파일:** `.agents/skills/oma-deepsec/SKILL.md`, `.agents/skills/oma-deepsec/resources/*.md` (인텐트 스코프), `data/<id>/INFO.md`, `data/<id>/files/`, `deepsec.config.ts`.
+**쓰는 파일:** `.deepsec/` (`setup` 시), `.env.local` (gitignore 처리), `data/<id>/INFO.md`, `.deepsec/matchers/<slug>.ts`, `findings/` (`export` 시), `comment.md` (`pr-review` 시).
+
+**규칙:** 이 워크플로우에서는 제품 소스 코드를 수정하지 않습니다(전문가에게 위임). 자격 증명(`vck_…`, `sk-ant-…`, OIDC 토큰)을 출력하거나 커밋하지 않습니다. PR 제어 코드를 실행하는 CI 잡에 `pull-requests: write`를 부여하지 않습니다. 재개하되 초기화하지 않습니다: 중단 시 동일 명령을 재실행하며, 사용자의 명시적 지시 없이 `rm -rf data/<id>/`를 실행하지 않습니다.
+
+**언제 사용:** 저장소의 에이전트 기반 취약점 스캔, `process --diff`를 통한 CI/PR 보안 게이팅, 엔트리 포인트 커버리지를 위한 프로젝트 특화 매처 작성, 기존 발견의 트리아지 및 FP 제거.
+
 ---
 
 ### /debug

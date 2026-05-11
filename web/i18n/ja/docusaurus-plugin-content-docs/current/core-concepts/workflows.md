@@ -199,6 +199,28 @@ description: oh-my-agentの全16ワークフロー完全リファレンス。ス
 
 **オプションの修正-検証ループ**（`--fix`付き）：QAレポート後にCRITICAL/HIGH課題を修正、最大3回繰り返し。
 
+**委任：** 大規模スコープではステップ2-7をスポーンしたQAエージェントサブエージェントに委任。
+
+---
+
+### /deepsec
+
+**説明：** `oma-deepsec`スキルをエンドツーエンドで駆動。`.deepsec/`をインストールし、コストを校正し、scan/process/triage/revalidate/exportパスを実行、`process --diff`でPRをゲートし、カスタムマッチャーを作成し、発見を専門エージェントへルーティング。インライン実行（サブエージェントのスポーンなし）。
+
+**トリガーキーワード：** "/deepsec"、"deepsec workflow"（共通）、"run deepsec"、"deepsec scan this repo"、"deepsec pr review"、"deepsec ci gate"、"deepsec triage"、"deepsec matchers"（英語）、"딥섹 워크플로우"、"딥섹 실행"、"딥섹 PR 리뷰"（韓国語）、"ディープセック実行"、"deepsecワークフロー"、"deepsecでスキャン"、"deepsec PRレビュー"（日本語）、"运行 deepsec"、"deepsec 工作流"、"deepsec PR 审查"（中国語）。
+
+**ステップ：**
+1. **ステップ1、スキル読み込み：** `.agents/skills/oma-deepsec/SKILL.md`を読み、解決されたインテントに対応するリソースファイル（`setup.md`、`scanning.md`、`pr-review.md`、`matchers.md`、`triage.md`、`config.md`）のみをロード。リポジトリ直下に`.deepsec/`があれば増分実行として扱い、再度`init`しない。
+2. **ステップ2、インテント分類：** `setup`、`scan`、`pr-review`、`matchers`、`triage`、`config`、`troubleshoot`のいずれか一つに解決。複数インテントは順次実行。`.deepsec/`が無い場合、AI呼び出しインテントの前に`setup`を挿入。
+3. **ステップ3、エージェント選択の確認：** 有料呼び出し前に`claude`（最強推論・最も高価）と`codex`（読み取り専用サンドボックス・安価）を確認。ユーザー指定、`deepsec.config.ts`の`defaultAgent`固定、またはユーザー委任時はスキップ。
+4. **ステップ4、解決済みインテントの実行：** `setup`は`bunx deepsec init` + `data/<id>/INFO.md`作成（ユーザー確認必須）。`scan`は`--limit 50 --concurrency 5`で校正→コスト外挿→フル`process`→`triage --severity HIGH` + `revalidate --min-severity HIGH`→`export`。`pr-review`は`process --diff origin/${BASE_REF} --comment-out comment.md`の2ジョブCIパターン。`matchers`は`.deepsec/matchers/<slug>.ts`を`precise`/`normal`/`noisy`の適切な階層で作成し`scan --matchers`で検証。`triage`は`true-positive`/`uncertain`のみにフィルタしFP形状をメモ。`config`/`troubleshoot`は`resources/config.md`の症状表を適用。
+5. **ステップ5、要約とルーティング：** 実行サマリ（project id、pass type、agent/model、files scanned、findings、TP after revalidate、cost、wall time、stop conditions）を生成。脆弱ファイルの**レイヤー**で後続をルーティング（backend → `oma-backend`、frontend → `oma-frontend`、mobile → `oma-mobile`、IaC → `oma-tf-infra`、DB → `oma-db`、CI → `oma-dev-workflow`、ドキュメント乖離 → `oma-docs`、エントリーポイント欠落 → ステップ4D再入）。レイヤー曖昧または`revalidation.verdict === "uncertain"`の場合はまず`oma-debug`をトリアージホップとして実行。
+6. **ステップ6、停止条件：** インテント完了 + ステップ5要約、ブロッキング前提条件（認証情報欠落、`INFO.md`拒否）、または安全再開コマンド付きクォータ停止で終了。
+
+**ルール：** 製品ソースコードを変更しない（専門家に委任）。認証情報（`vck_…`、`sk-ant-…`、OIDCトークン）をエコーしたりコミットしたりしない。PR制御コードを実行するCIジョブに`pull-requests: write`を付与しない。再開し、リセットしない：中断時は同じコマンドを再実行し、ユーザーの明示的指示なしに`rm -rf data/<id>/`を行わない。
+
+**使用場面：** リポジトリのエージェント駆動型脆弱性スキャン、`process --diff`によるCI/PRセキュリティゲート、エントリーポイント網羅のためのプロジェクト固有マッチャー作成、既存発見のトリアージとFP削減。
+
 ---
 
 ### /debug

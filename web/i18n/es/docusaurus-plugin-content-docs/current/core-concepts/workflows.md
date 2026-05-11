@@ -285,6 +285,39 @@ Lista blanca de sustantivos (15): app, api, service, server, cli, tool, website,
 
 ---
 
+### /deepsec
+
+**Descripción:** Conduce la skill `oma-deepsec` de extremo a extremo. Instala `.deepsec/`, calibra costos, ejecuta los pasos scan/process/triage/revalidate/export, controla PRs con `process --diff`, escribe matchers personalizados y enruta los hallazgos a agentes especialistas. Ejecución inline (sin generar subagentes).
+
+**Palabras clave de activación:**
+| Idioma | Palabras clave |
+|--------|----------------|
+| Universal | "/deepsec", "deepsec workflow" |
+| Inglés | "run deepsec", "deepsec scan this repo", "scan repo with deepsec", "deepsec pr review", "deepsec ci gate", "deepsec triage", "deepsec matchers" |
+
+**Pasos:**
+1. **Paso 1, Cargar la skill:** Lee `.agents/skills/oma-deepsec/SKILL.md` y carga solo los archivos de recursos que coinciden con la intención resuelta (`setup.md`, `scanning.md`, `pr-review.md`, `matchers.md`, `triage.md`, `config.md`). Si ya existe `.deepsec/` en la raíz del repositorio, trata la ejecución como incremental y nunca vuelvas a hacer `init`.
+2. **Paso 2, Clasificar la intención:** Resuélvela en exactamente una de `setup`, `scan`, `pr-review`, `matchers`, `triage`, `config`, `troubleshoot`. Las solicitudes multi-intención se ejecutan secuencialmente. Inserta `setup` antes de cualquier intención con llamada a IA si falta `.deepsec/`.
+3. **Paso 3, Confirmar el agente:** Antes de cualquier llamada de pago, confirma `claude` (razonamiento más fuerte, más caro) frente a `codex` (sandbox de solo lectura, más barato). Omite si el usuario nombró uno, `deepsec.config.ts` fija `defaultAgent` o el usuario delegó la elección.
+4. **Paso 4, Ejecutar la intención resuelta:**
+   - **4A `setup`:** `bunx deepsec init`, `bun install`, editar `.env.local`, verificar con `scan --limit 20` + `process --limit 5`, luego redactar `data/<id>/INFO.md` (50-100 líneas, específico del proyecto). **Requiere confirmación del usuario sobre `INFO.md`.**
+   - **4B `scan`:** Scan -> calibrar con `--limit 50 --concurrency 5` -> reportar la extrapolación de costo (se requiere aprobación explícita del usuario) -> `process` completo -> `triage --severity HIGH` + `revalidate --min-severity HIGH` -> `export --format md-dir` + `metrics`.
+   - **4C `pr-review`:** Modo directo `process --diff origin/${BASE_REF} --comment-out comment.md`. Emite el patrón de CI con dos jobs (`analyze` sin `pull-requests: write`, `comment` consume solo el artefacto saneado). Exit `1` = al menos un hallazgo nuevo.
+   - **4D `matchers`:** Recorrer `data/<id>/files/` buscando huecos en puntos de entrada, escribir matchers por slug en `.deepsec/matchers/<slug>.ts` al nivel de ruido adecuado (`precise` / `normal` / `noisy`), conectarlos vía `.deepsec/deepsec.config.ts` y verificar con `scan --matchers`.
+   - **4E `triage`:** `triage --severity HIGH` -> `revalidate --min-severity HIGH` -> filtrar la exportación solo a `true-positive` / `uncertain`. Anotar formas recurrentes de FP para la próxima revisión de `INFO.md`.
+   - **4F `config` / `troubleshoot`:** Aplicar la tabla de síntomas de `resources/config.md`.
+5. **Paso 5, Resumir y enrutar:** Produce un resumen del run (project id, tipo de pase, agent/model, archivos escaneados, hallazgos, TP tras revalidate, costo, tiempo de pared, condiciones de parada). Enruta el seguimiento por la **capa del archivo vulnerable** (backend -> `oma-backend`, frontend -> `oma-frontend`, mobile -> `oma-mobile`, IaC -> `oma-tf-infra`, DB -> `oma-db`, CI -> `oma-dev-workflow`, drift de docs -> `oma-docs`, hueco de entry-point -> volver al Paso 4D). Si la capa es ambigua o `revalidation.verdict === "uncertain"`, primero `oma-debug` como salto de triage.
+6. **Paso 6, Condiciones de parada:** Termina al completar la intención + resumen del Paso 5, ante una precondición bloqueante (credencial ausente, `INFO.md` rechazado) o un corte por cuota acompañado de un comando seguro de resume.
+
+**Archivos leídos:** `.agents/skills/oma-deepsec/SKILL.md`, `.agents/skills/oma-deepsec/resources/*.md` (según intención), `data/<id>/INFO.md`, `data/<id>/files/`, `deepsec.config.ts`.
+**Archivos escritos:** `.deepsec/` (en `setup`), `.env.local` (gitignored), `data/<id>/INFO.md`, `.deepsec/matchers/<slug>.ts`, `findings/` (en `export`), `comment.md` (en `pr-review`).
+
+**Reglas:** En este workflow no se modifica el código fuente del producto (delegar a especialistas). No mostrar ni commitear credenciales (`vck_…`, `sk-ant-…`, tokens OIDC). No otorgar `pull-requests: write` a ningún job de CI que ejecute código controlado por el PR. Reanudar, no resetear: ante una interrupción, re-ejecuta el mismo comando; nunca `rm -rf data/<id>/` sin instrucción explícita del usuario.
+
+**Cuándo usar:** Escaneo de vulnerabilidades agent-powered de un repo, gating de seguridad CI/PR vía `process --diff`, escritura de matchers específicos del proyecto para cobertura de entry-points, triage de hallazgos existentes para reducir FPs.
+
+---
+
 ### /debug
 
 **Descripción:** Depuración estructurada con escritura de pruebas de regresión y escaneo de patrones similares.

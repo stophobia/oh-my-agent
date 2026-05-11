@@ -285,6 +285,39 @@ Lista dozwolonych rzeczowników (15): app, api, service, server, cli, tool, webs
 
 ---
 
+### /deepsec
+
+**Opis:** Prowadzi skill `oma-deepsec` od początku do końca. Instaluje `.deepsec/`, kalibruje koszt, uruchamia przebiegi scan/process/triage/revalidate/export, blokuje PR-y poprzez `process --diff`, tworzy własne matchery i kieruje znaleziska do agentów specjalistycznych. Wykonanie inline (bez uruchamiania subagentów).
+
+**Słowa kluczowe wyzwalające:**
+| Język | Słowa kluczowe |
+|----------|----------|
+| Uniwersalne | "/deepsec", "deepsec workflow" |
+| Angielski | "run deepsec", "deepsec scan this repo", "scan repo with deepsec", "deepsec pr review", "deepsec ci gate", "deepsec triage", "deepsec matchers" |
+
+**Kroki:**
+1. **Krok 1, Załaduj skill:** Przeczytaj `.agents/skills/oma-deepsec/SKILL.md`, a następnie załaduj wyłącznie pliki zasobów odpowiadające rozpoznanej intencji (`setup.md`, `scanning.md`, `pr-review.md`, `matchers.md`, `triage.md`, `config.md`). Jeśli `.deepsec/` już istnieje w korzeniu repozytorium, traktuj uruchomienie jako inkrementalne i nigdy ponownie nie wykonuj `init`.
+2. **Krok 2, Klasyfikuj intencję:** Rozstrzygnij ją na dokładnie jedną z: `setup`, `scan`, `pr-review`, `matchers`, `triage`, `config`, `troubleshoot`. Wieloinwencyjne prompty wykonuj sekwencyjnie. Wstaw `setup` przed dowolną intencją wymagającą wywołań AI, jeśli brakuje `.deepsec/`.
+3. **Krok 3, Potwierdź wybór agenta:** Przed jakimkolwiek płatnym wywołaniem potwierdź `claude` (najsilniejsze rozumowanie, najdroższy) vs `codex` (sandbox tylko do odczytu, tańszy). Pomiń, jeśli użytkownik wskazał jednego, `deepsec.config.ts` ustawia `defaultAgent` lub użytkownik delegował wybór.
+4. **Krok 4, Wykonaj rozpoznaną intencję:**
+   - **4A `setup`:** `bunx deepsec init`, `bun install`, edycja `.env.local`, weryfikacja przez `scan --limit 20` + `process --limit 5`, następnie utworzenie `data/<id>/INFO.md` (50-100 linii, specyficzne dla projektu). **Wymaga potwierdzenia użytkownika dla `INFO.md`.**
+   - **4B `scan`:** Scan -> kalibracja `--limit 50 --concurrency 5` -> raport ekstrapolacji kosztu (wymaga jawnej zgody użytkownika) -> pełny `process` -> `triage --severity HIGH` + `revalidate --min-severity HIGH` -> `export --format md-dir` + `metrics`.
+   - **4C `pr-review`:** Tryb bezpośredni `process --diff origin/${BASE_REF} --comment-out comment.md`. Emituj wzorzec CI z dwoma zadaniami (`analyze` bez `pull-requests: write`, `comment` korzysta tylko z oczyszczonego artefaktu). Wyjście `1` = co najmniej jedno nowe znalezisko.
+   - **4D `matchers`:** Przejdź `data/<id>/files/` w poszukiwaniu braków punktów wejścia, zapisz matchery per slug do `.deepsec/matchers/<slug>.ts` na odpowiednim poziomie szumu (`precise` / `normal` / `noisy`), podłącz je przez `.deepsec/deepsec.config.ts` i zweryfikuj `scan --matchers`.
+   - **4E `triage`:** `triage --severity HIGH` -> `revalidate --min-severity HIGH` -> filtruj eksport tylko do `true-positive` / `uncertain`. Odnotuj powracające kształty FP do następnej rewizji `INFO.md`.
+   - **4F `config` / `troubleshoot`:** Zastosuj tabelę objawów z `resources/config.md`.
+5. **Krok 5, Podsumuj i kieruj:** Wytwórz podsumowanie uruchomienia (project id, typ przebiegu, agent/model, przeskanowane pliki, znaleziska, TP po revalidate, koszt, czas zegarowy, warunki zatrzymania). Kieruj kolejne działania według **warstwy podatnego pliku** (backend -> `oma-backend`, frontend -> `oma-frontend`, mobile -> `oma-mobile`, IaC -> `oma-tf-infra`, DB -> `oma-db`, CI -> `oma-dev-workflow`, dryf dokumentacji -> `oma-docs`, brak punktu wejścia -> ponowne wejście do kroku 4D). Niejasna warstwa lub `revalidation.verdict === "uncertain"` -> najpierw `oma-debug` jako etap triage.
+6. **Krok 6, Warunki zatrzymania:** Zakończ przy ukończonej intencji + podsumowanie z kroku 5, blokujący warunek wstępny (brakujące poświadczenie, odrzucone `INFO.md`) lub stop kwotowy z bezpiecznym poleceniem wznowienia.
+
+**Czytane pliki:** `.agents/skills/oma-deepsec/SKILL.md`, `.agents/skills/oma-deepsec/resources/*.md` (zakres wg intencji), `data/<id>/INFO.md`, `data/<id>/files/`, `deepsec.config.ts`.
+**Zapisywane pliki:** `.deepsec/` (przy `setup`), `.env.local` (gitignored), `data/<id>/INFO.md`, `.deepsec/matchers/<slug>.ts`, `findings/` (przy `export`), `comment.md` (przy `pr-review`).
+
+**Zasady:** W tym workflow nie modyfikuj kodu źródłowego produktu (przekazuj specjalistom). Nie wypisuj ani nie commituj poświadczeń (`vck_…`, `sk-ant-…`, tokenów OIDC). Nie nadawaj `pull-requests: write` żadnemu jobowi CI uruchamiającemu kod sterowany PR-em. Wznawiaj, nie resetuj: po przerwaniu uruchom ponownie to samo polecenie; nigdy `rm -rf data/<id>/` bez wyraźnej instrukcji użytkownika.
+
+**Kiedy używać:** Skanowanie podatności repozytorium przez agentów, gatowanie bezpieczeństwa CI/PR poprzez `process --diff`, tworzenie specyficznych dla projektu matcherów dla pokrycia punktów wejścia, triage istniejących znalezisk w celu redukcji FP.
+
+---
+
 ### /debug
 
 **Opis:** Ustrukturyzowana diagnoza i naprawa błędów z pisaniem testów regresji i skanowaniem podobnych wzorców.

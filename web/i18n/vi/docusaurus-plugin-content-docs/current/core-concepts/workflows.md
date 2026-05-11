@@ -105,6 +105,18 @@ Danh sách trắng danh từ (15): app, api, service, server, cli, tool, website
 
 **Mô tả:** Pipeline đánh giá QA đầy đủ. Kiểm tra bảo mật (OWASP Top 10), phân tích hiệu suất, kiểm tra accessibility (WCAG 2.1 AA) và đánh giá chất lượng mã.
 
+### /deepsec
+
+**Mô tả:** Điều phối skill `oma-deepsec` từ đầu đến cuối. Cài `.deepsec/`, hiệu chuẩn chi phí, chạy các bước scan/process/triage/revalidate/export, chặn PR bằng `process --diff`, viết matcher tùy chỉnh và định tuyến phát hiện tới các agent chuyên trách. Chạy inline (không spawn subagent).
+
+**Từ khóa kích hoạt:** "/deepsec", "deepsec workflow" (chung); "run deepsec", "deepsec pr review", "deepsec ci gate", "deepsec triage", "deepsec matchers" (tiếng Anh).
+
+**Các bước:** Tải skill và chỉ các file resource khớp intent (`setup.md`, `scanning.md`, `pr-review.md`, `matchers.md`, `triage.md`, `config.md`); nếu `.deepsec/` đã tồn tại thì coi là chạy gia tăng, không `init` lại. Phân loại thành đúng một trong `setup`, `scan`, `pr-review`, `matchers`, `triage`, `config`, `troubleshoot`; chèn `setup` trước nếu thiếu `.deepsec/`. Xác nhận `claude` vs `codex` trước cuộc gọi tính phí. Thực thi: `setup` viết `data/<id>/INFO.md` (cần xác nhận người dùng); `scan` hiệu chuẩn `--limit 50 --concurrency 5`, ngoại suy chi phí, chạy `process` đầy đủ, `triage --severity HIGH` + `revalidate --min-severity HIGH`, `export`; `pr-review` dùng `process --diff origin/${BASE_REF} --comment-out comment.md` theo mẫu CI hai job; `matchers` viết `.deepsec/matchers/<slug>.ts` ở mức nhiễu phù hợp (`precise`/`normal`/`noisy`) rồi kiểm tra `scan --matchers`; `triage` lọc export về `true-positive`/`uncertain`. Tổng kết và định tuyến theo **lớp của file dễ tổn thương** (backend -> `oma-backend`, frontend -> `oma-frontend`, mobile -> `oma-mobile`, IaC -> `oma-tf-infra`, DB -> `oma-db`, CI -> `oma-dev-workflow`, drift docs -> `oma-docs`, thiếu entry-point -> quay lại bước matchers); lớp mơ hồ hoặc `revalidation.verdict === "uncertain"` thì đi qua `oma-debug` trước.
+
+**Quy tắc:** Không sửa mã nguồn sản phẩm trong workflow này. Không in hoặc commit credentials (`vck_…`, `sk-ant-…`, token OIDC). Không cấp `pull-requests: write` cho job CI chạy mã do PR điều khiển. Khi gián đoạn thì chạy lại cùng lệnh; không bao giờ `rm -rf data/<id>/` nếu người dùng không yêu cầu rõ.
+
+**Khi dùng:** Quét lỗ hổng repo bằng agent, gating bảo mật CI/PR qua `process --diff`, viết matcher riêng cho dự án để phủ entry-point, triage phát hiện cũ để giảm FP.
+
 ### /debug
 
 **Mô tả:** Chẩn đoán và sửa lỗi có cấu trúc với viết test hồi quy và quét mẫu tương tự.
