@@ -67,7 +67,6 @@ Pick a preset and you're ready:
 | **oma-architecture** | Architectural tradeoffs, boundaries, ADR/ATAM/CBAM-aware analysis |
 | **oma-backend** | APIs in Python, Node.js, or Rust |
 | **oma-brainstorm** | Explores ideas before you commit to building |
-| **oma-coordination** | Manual step-by-step multi-agent coordination guide |
 | **oma-db** | Schema design, migrations, indexing, vector DB |
 | **oma-debug** | Root cause analysis, fixes, regression tests |
 | **oma-deepsec** | Agent-powered vulnerability scanner (Vercel deepsec) with PR gates and custom matchers |
