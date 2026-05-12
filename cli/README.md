@@ -67,10 +67,9 @@ Pick a preset and you're ready:
 | **oma-architecture** | Architectural tradeoffs, boundaries, ADR/ATAM/CBAM-aware analysis |
 | **oma-backend** | APIs in Python, Node.js, or Rust |
 | **oma-brainstorm** | Explores ideas before you commit to building |
-| **oma-coordination** | Manual step-by-step multi-agent coordination guide |
 | **oma-db** | Schema design, migrations, indexing, vector DB |
 | **oma-debug** | Root cause analysis, fixes, regression tests |
-| **oma-deepsec** | Agent-powered vulnerability scanner (Vercel deepsec) with PR gates and custom matchers |
+| **oma-deepsec** | Agent-powered vulnerability scanner with PR gates and custom matchers |
 | **oma-design** | Design systems, tokens, accessibility, responsive |
 | **oma-dev-workflow** | CI/CD, releases, monorepo automation |
 | **oma-docs** | Reference integrity checks, diff-affected doc detection |
@@ -119,7 +118,7 @@ Or use slash commands for structured workflows:
 | 3 | `/ultrawork` | 5-phase quality workflow with 11 review gates |
 | 3 | `/ralph` | Wraps `/ultrawork` in an independent verifier loop until criteria pass |
 | 4 | `/review` | Security + performance + accessibility audit |
-| 4 | `/deepsec` | Deep agent-powered security scan (Vercel deepsec) |
+| 4 | `/deepsec` | Deep agent-powered security scan |
 | 5 | `/debug` | Structured root-cause debugging |
 | 5 | `/docs` | Documentation drift verify + sync via `oma-docs` |
 | 6 | `/scm` | SCM + Git workflow and Conventional Commit support |
