@@ -1,7 +1,7 @@
 {
   "name": "oh-my-agent",
   "version": "7.12.0",
-  "releaseDate": "2026-05-12T05:12:30.377Z",
+  "releaseDate": "2026-05-13T05:55:08.814Z",
   "repository": "https://github.com/first-fluke/oh-my-agent",
   "files": [
     {
@@ -111,8 +111,8 @@
     },
     {
       "path": ".agents/hooks/core/keyword-detector.ts",
-      "sha256": "9fa262730c246eab35c87c6b03e38ba113ecc38342637cea82f938c7814ab626",
-      "size": 25552
+      "sha256": "f19c0ccacf9ea506677e3d4f913cf47841aa3da88151420f7d0e57e203713cdc",
+      "size": 25677
     },
     {
       "path": ".agents/hooks/core/persistent-mode.ts",
@@ -131,8 +131,8 @@
     },
     {
       "path": ".agents/hooks/core/triggers.json",
-      "sha256": "00c8e5b8c48f061fca3560e3516a3817be1944b23b2ac4ca48116620d67e228a",
-      "size": 73818
+      "sha256": "d6a65e417044b85d97ee233dcd7ff6f1e6c83d23242e3c874c28b4a2cdd632a9",
+      "size": 74033
     },
     {
       "path": ".agents/hooks/core/types.ts",
