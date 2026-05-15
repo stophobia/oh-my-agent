@@ -2722,12 +2722,7 @@
     },
     "oma-voice": {
       "keywords": {
-        "*": [
-          "voicebox",
-          "oma-voice",
-          "tts",
-          "stt"
-        ],
+        "*": ["voicebox", "oma-voice", "tts", "stt"],
         "en": [
           "text to speech",
           "speech to text",
