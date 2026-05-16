@@ -15,6 +15,10 @@ const config: Config = {
   projectName: "oh-my-agent",
 
   onBrokenLinks: "throw",
+  future: {
+    v4: true,
+    faster: true,
+  },
   markdown: {
     format: "md",
     hooks: {

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "3.10.0",
+    "@docusaurus/faster": "3.10.0",
     "@docusaurus/preset-classic": "3.10.0",
     "@easyops-cn/docusaurus-search-local": "0.55.1",
     "@mdx-js/react": "^3.0.0",
@@ -40,8 +41,5 @@
   },
   "engines": {
     "node": ">=18.0"
-  },
-  "overrides": {
-    "webpack": "~5.97.0"
   }
 }
