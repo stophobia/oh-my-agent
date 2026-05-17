@@ -13,6 +13,11 @@ import {
 } from "../../io/session-cost.js";
 import { detectWorkspace } from "../../io/workspaces.js";
 import {
+  createWorktree,
+  formatWorktreeSummary,
+  type WorktreeHandle,
+} from "../../io/worktree.js";
+import {
   loadExecutionProtocol,
   resolvePromptContent,
   resolvePromptFlag,
@@ -120,9 +125,27 @@ export async function spawnAgent(
   workspace: string,
   vendorOverride?: string,
   taskHints?: TaskHints,
+  isolation?: string,
 ) {
-  const effectiveWorkspace =
-    workspace === "." ? detectWorkspace(agentId) : workspace;
+  let worktreeHandle: WorktreeHandle | null = null;
+  if (isolation === "worktree") {
+    worktreeHandle = createWorktree(sessionId, agentId);
+    console.log(
+      color.blue(
+        `[${agentId}] Isolated worktree: ${worktreeHandle.path} (branch ${worktreeHandle.branch})`,
+      ),
+    );
+  } else if (isolation && isolation !== "none") {
+    throw new Error(
+      `Unknown --isolation mode: ${JSON.stringify(isolation)}. Supported: worktree`,
+    );
+  }
+
+  const effectiveWorkspace = worktreeHandle
+    ? worktreeHandle.path
+    : workspace === "."
+      ? detectWorkspace(agentId)
+      : workspace;
   const resolvedWorkspace = path.resolve(effectiveWorkspace);
 
   if (!fs.existsSync(resolvedWorkspace)) {
@@ -130,7 +153,7 @@ export async function spawnAgent(
     console.log(
       color.dim(`[${agentId}] Created workspace: ${resolvedWorkspace}`),
     );
-  } else if (effectiveWorkspace !== workspace) {
+  } else if (!worktreeHandle && effectiveWorkspace !== workspace) {
     console.log(
       color.blue(`[${agentId}] Auto-detected workspace: ${effectiveWorkspace}`),
     );
@@ -274,6 +297,13 @@ export async function spawnAgent(
         console.warn(
           `[${agentId}] session-cost recordUsage error (non-fatal): ${String(err)}`,
         );
+      }
+
+      if (worktreeHandle) {
+        console.log(color.blue(`[${agentId}] Worktree retained for review:`));
+        for (const line of formatWorktreeSummary(worktreeHandle).split("\n")) {
+          console.log(color.dim(`  ${line}`));
+        }
       }
 
       cleanup();

@@ -16,6 +16,10 @@ export function registerAgentCommands(program: Command): void {
       "-w, --workspace <path>",
       "Working directory for the agent (auto-detected if omitted)",
     )
+    .option(
+      "--isolation <mode>",
+      "Isolation mode: 'worktree' creates a git worktree per spawn (default: none)",
+    )
     .action(
       runAction(async (agentId, prompt, sessionId, options) => {
         await spawnAgent(
@@ -24,6 +28,8 @@ export function registerAgentCommands(program: Command): void {
           sessionId,
           options.workspace || ".",
           options.model,
+          undefined,
+          options.isolation,
         );
       }),
     );
