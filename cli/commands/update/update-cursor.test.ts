@@ -52,7 +52,7 @@ vi.mock("../../platform/skills-installer.js", () => ({
   detectExistingCliSymlinkDirs: vi.fn(() => []),
   getInstalledSkillNames: vi.fn(() => []),
   createCliSymlinks: vi.fn(() => ({ created: [], skipped: [] })),
-  ensureCursorMcpSymlink: vi.fn(),
+  ensureCursorMcpConfig: vi.fn(),
   readVendorsFromConfig: vi.fn(() => configuredVendorsForTest),
   isHookVendor: vi.fn((v: string) =>
     ["claude", "codex", "cursor", "gemini", "qwen"].includes(v),
@@ -120,7 +120,7 @@ describe("update cursor vendor adaptations", () => {
     expect(cursorRulesCall?.[0]).toContain(projectDir);
 
     const mcpLinkCall = (
-      skills.ensureCursorMcpSymlink as unknown as ReturnType<typeof vi.fn>
+      skills.ensureCursorMcpConfig as unknown as ReturnType<typeof vi.fn>
     ).mock.calls[0];
     expect(mcpLinkCall?.[0]).toContain(projectDir);
 
@@ -152,8 +152,8 @@ describe("update cursor vendor adaptations", () => {
     expect(secondCursorRulesCall?.[0]).toContain(projectDir);
 
     expect(
-      (skills.ensureCursorMcpSymlink as unknown as ReturnType<typeof vi.fn>)
-        .mock.calls.length,
+      (skills.ensureCursorMcpConfig as unknown as ReturnType<typeof vi.fn>).mock
+        .calls.length,
     ).toBeGreaterThan(0);
 
     const codexMergeCall = (

@@ -40,7 +40,7 @@ import {
 import {
   createCliSymlinks,
   detectExistingCliSymlinkDirs,
-  ensureCursorMcpSymlink,
+  ensureCursorMcpConfig,
   getInstalledSkillNames,
   installCodexWorkflowSkills,
   installVendorAdaptations,
@@ -400,7 +400,7 @@ export async function update(force = false, ci = false): Promise<void> {
 
       // --- Vendor-specific rules export ---
       if (configuredVendors.includes("cursor")) {
-        ensureCursorMcpSymlink(cwd);
+        ensureCursorMcpConfig(cwd);
         generateCursorRules(cwd);
       }
       const mergedFiles = new Set<string>();
