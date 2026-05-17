@@ -53,6 +53,7 @@ import { promptUninstallCompetitors } from "../../utils/competitors.js";
 import {
   isAutoUpdateCliEnabled,
   isTelemetryEnabled,
+  loadSerenaConfig,
 } from "../../utils/config.js";
 import {
   applyRecommendedSettings,
@@ -438,6 +439,24 @@ export async function update(force = false, ci = false): Promise<void> {
       {
         const serenaLangs = inferSerenaLanguages(cwd);
         ensureSerenaProject(cwd, serenaLangs);
+      }
+
+      // --- Optional Serena Binary Upgrade ---
+      // Opt-in via `serena.auto_update: true` in .agents/oma-config.yaml.
+      // Skip silently if uv is not installed or the upgrade fails — the
+      // serena MCP still works on the previously installed version.
+      if (loadSerenaConfig(cwd).autoUpdate) {
+        try {
+          execSync("uv tool upgrade serena-agent --prerelease=allow", {
+            stdio: "ignore",
+          });
+          ui.note("Upgraded serena-agent to the latest prerelease.", "Serena");
+        } catch {
+          ui.note(
+            "Skipped serena upgrade (uv unavailable or upgrade failed).",
+            "Serena",
+          );
+        }
       }
 
       await saveLocalVersion(cwd, remoteManifest.version);

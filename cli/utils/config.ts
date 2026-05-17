@@ -87,11 +87,16 @@ export function loadTimezone(cwd?: string): string {
  * `oma bridge`), and the vendor named in `bridge_host` receives a `{url}` MCP
  * entry instead of stdio. Other vendors stay on stdio unless explicitly added
  * to a future `bridge_clients` list.
+ *
+ * `autoUpdate` is opt-in (default false). When true, `oma update` runs
+ * `uv tool upgrade serena-agent --prerelease=allow` so the locally-installed
+ * serena binary tracks the latest prerelease.
  */
 export interface SerenaConfig {
   mode: "stdio" | "bridge";
   bridgeHost?: string;
   bridgeUrl: string;
+  autoUpdate: boolean;
 }
 
 const DEFAULT_BRIDGE_URL = "http://localhost:12341/mcp";
@@ -102,7 +107,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function loadSerenaConfig(cwd?: string): SerenaConfig {
   const config = loadOmaConfig(cwd) as unknown as {
-    serena?: { mode?: unknown; bridge_host?: unknown; bridge_url?: unknown };
+    serena?: {
+      mode?: unknown;
+      bridge_host?: unknown;
+      bridge_url?: unknown;
+      auto_update?: unknown;
+    };
   } | null;
   const raw = isRecord(config?.serena) ? config.serena : undefined;
   const mode = raw?.mode === "bridge" ? "bridge" : "stdio";
@@ -110,5 +120,6 @@ export function loadSerenaConfig(cwd?: string): SerenaConfig {
     typeof raw?.bridge_host === "string" ? raw.bridge_host : undefined;
   const bridgeUrl =
     typeof raw?.bridge_url === "string" ? raw.bridge_url : DEFAULT_BRIDGE_URL;
-  return { mode, bridgeHost, bridgeUrl };
+  const autoUpdate = raw?.auto_update === true;
+  return { mode, bridgeHost, bridgeUrl, autoUpdate };
 }
