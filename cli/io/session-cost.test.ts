@@ -14,7 +14,6 @@
  * 10.  formatPromptMessage returns non-empty string for all exceeded reasons
  */
 
-import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
@@ -119,7 +118,9 @@ beforeEach(() => {
   }
   vi.clearAllMocks();
   // Re-attach the store-backed implementations after clearAllMocks
-  mockFs.existsSync.mockImplementation((p: string) => normPath(p) in mockFs.store);
+  mockFs.existsSync.mockImplementation(
+    (p: string) => normPath(p) in mockFs.store,
+  );
   mockFs.readFileSync.mockImplementation((p: string, _enc: string) => {
     const np = normPath(p);
     if (np in mockFs.store) return mockFs.store[np];
@@ -191,7 +192,9 @@ describe("recordUsage + loadSessionUsage", () => {
   it("file contains YAML frontmatter with session id", () => {
     recordUsage(SESSION, makeRecord());
 
-    const filePath = join(".serena/memories", `session-cost-${SESSION}.md`);
+    // mock store keys are normalized to POSIX (see norm() above) so that
+    // path.join output on win32 still resolves. Read the same way.
+    const filePath = `.serena/memories/session-cost-${SESSION}.md`;
     const content = mockFs.store[filePath] ?? "";
     expect(content).toMatch(/^---\nsession: session-20260423-141500/);
     expect(content).toContain("created:");
@@ -284,7 +287,7 @@ describe("checkCap — per-vendor limit", () => {
 describe("malformed file resilience", () => {
   it("skips malformed JSON blocks and returns parseable records", () => {
     // Manually inject a file with a malformed block in the middle
-    const filePath = join(".serena/memories", `session-cost-${SESSION}.md`);
+    const filePath = `.serena/memories/session-cost-${SESSION}.md`;
     const good1 = JSON.stringify({
       sessionId: SESSION,
       vendor: "claude",
