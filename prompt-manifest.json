@@ -1,7 +1,7 @@
 {
   "name": "oh-my-agent",
   "version": "7.21.0",
-  "releaseDate": "2026-05-19T04:51:07.147Z",
+  "releaseDate": "2026-05-19T06:49:44.196Z",
   "repository": "https://github.com/first-fluke/oh-my-agent",
   "files": [
     {
@@ -131,8 +131,8 @@
     },
     {
       "path": ".agents/hooks/core/triggers.json",
-      "sha256": "9d4edf9af6a48986ab44817814ba5e1b8af15cec0ae07d9ee5803a93159fc63b",
-      "size": 76694
+      "sha256": "db065d867460af550006e79ac565c22050ab130187675b43269b9fa6832e5e67",
+      "size": 77922
     },
     {
       "path": ".agents/hooks/core/types.ts",
@@ -941,8 +941,8 @@
     },
     {
       "path": ".agents/skills/oma-market/resources/intent-rules.md",
-      "sha256": "626da6294dada7c062be8e5fbb32589062486733fd5ea24d66ea259de8e2beb6",
-      "size": 2514
+      "sha256": "5dc0d6caa41f719da1df065bf3066e9edba6a2eb472e8427abe3ac5f2bb38553",
+      "size": 2416
     },
     {
       "path": ".agents/skills/oma-market/resources/operator-packs/competitor.md",
@@ -1011,13 +1011,13 @@
     },
     {
       "path": ".agents/skills/oma-observability/SKILL.md",
-      "sha256": "9ca224c17674765a82913d8c842e6e05d4017356ae370f47b83a5fd7346094d6",
-      "size": 19585
+      "sha256": "bf5f986555455bd07ef3dac6c7da1de8ada2e52cb02b8aafd9c5cd8ecbcedabc",
+      "size": 19630
     },
     {
       "path": ".agents/skills/oma-observability/resources/anti-patterns.md",
-      "sha256": "5505963c6e4fa272893c6c68cd6073129e23015871b7c24e7b1df5f14a0a5dfb",
-      "size": 43086
+      "sha256": "2e6975f37327de029fcc479527e29b49c1878acec30aa1222c1493159ce9a297",
+      "size": 46754
     },
     {
       "path": ".agents/skills/oma-observability/resources/boundaries/cross-application.md",
@@ -1046,13 +1046,13 @@
     },
     {
       "path": ".agents/skills/oma-observability/resources/examples.md",
-      "sha256": "f3d8f6dde7e0f8b07878a46fbc8aad1ba19546ed327fe53c6042e5747d4e700c",
-      "size": 16040
+      "sha256": "326e236fb4b4cf40f6b80a30dde5b7e5fda12d9dc612e80d2f826c46549b41cb",
+      "size": 16039
     },
     {
       "path": ".agents/skills/oma-observability/resources/execution-protocol.md",
-      "sha256": "1df08d61cbc2d1d8866b2a8f81dbe30e1a7018304eb715ae1264248698d68dff",
-      "size": 9171
+      "sha256": "c74e88a527f177d7bfaec00bdc8d20c1ae77f205a6bf7be1e833a1679e3ed17d",
+      "size": 9172
     },
     {
       "path": ".agents/skills/oma-observability/resources/incident-forensics.md",
@@ -1061,8 +1061,8 @@
     },
     {
       "path": ".agents/skills/oma-observability/resources/intent-rules.md",
-      "sha256": "edd5d8f532cc1cf66e5ed04f95fa8f64001e6110496dd41228c1a168367a7b2c",
-      "size": 13149
+      "sha256": "773131b7c7b3ed83554e0f29675a46127dd20b29b609d2fe3b5df0057373d05d",
+      "size": 12058
     },
     {
       "path": ".agents/skills/oma-observability/resources/layers/L3-network.md",
@@ -1083,6 +1083,11 @@
       "path": ".agents/skills/oma-observability/resources/layers/L7-application/mobile-rum.md",
       "sha256": "4209080d41e00a36821a442777fbccd70fa5bbb8d45fadc1f86f9961d34bd87f",
       "size": 16209
+    },
+    {
+      "path": ".agents/skills/oma-observability/resources/layers/L7-application/waf.md",
+      "sha256": "f6ec57cb78b565190321928684c62c232d52a37e869612f0bbd36e1053199ee2",
+      "size": 17044
     },
     {
       "path": ".agents/skills/oma-observability/resources/layers/L7-application/web-rum.md",
@@ -1426,8 +1431,8 @@
     },
     {
       "path": ".agents/skills/oma-search/resources/examples.md",
-      "sha256": "990cad66cd9e84f33425969f0ec2a0bb3b194c210a3257a1698510a383272902",
-      "size": 4329
+      "sha256": "99d0ccd23b4c5a8590e8e2db1667baf2bf56947141342b99f9135c0ebda27702",
+      "size": 4317
     },
     {
       "path": ".agents/skills/oma-search/resources/execution-protocol.md",
@@ -1436,8 +1441,8 @@
     },
     {
       "path": ".agents/skills/oma-search/resources/intent-rules.md",
-      "sha256": "524e4398d01d4cf2a2f26e543924f5fc0789d3b825a074610620f7ed86ae0f4c",
-      "size": 3505
+      "sha256": "0805e67e065d65b94e43217bd5a3c401247494e62152dbb39f6b988818070ed4",
+      "size": 2773
     },
     {
       "path": ".agents/skills/oma-search/resources/trust-registry.md",
@@ -1481,8 +1486,8 @@
     },
     {
       "path": ".agents/skills/oma-tf-infra/resources/examples.md",
-      "sha256": "03316597737a023ed0b23af19f27ad40fd78ba43266445541cf640bf5e05ebfb",
-      "size": 1564
+      "sha256": "50fd4ec597b394a8fbe39ce60fa8f5666c31d914e799746baf28a59860760860",
+      "size": 1537
     },
     {
       "path": ".agents/skills/oma-tf-infra/resources/execution-protocol.md",
@@ -1661,6 +1666,6 @@
   "metadata": {
     "skillCount": 29,
     "workflowCount": 21,
-    "totalFiles": 330
+    "totalFiles": 331
   }
 }
