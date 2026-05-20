@@ -304,9 +304,7 @@ export function buildClaudeStatusline(input: StatuslineStdin): string {
   const inTok = input.context_window?.total_input_tokens ?? 0;
   const outTok = input.context_window?.total_output_tokens ?? 0;
   if (inTok > 0 || outTok > 0) {
-    parts.push(
-      dim(`tok:${formatTokens(inTok)}↑${formatTokens(outTok)}↓`),
-    );
+    parts.push(dim(`tok:${formatTokens(inTok)}↑${formatTokens(outTok)}↓`));
   }
 
   // 5. Session cost (Claude)
