@@ -116,5 +116,5 @@ jobs:
       - name: Publish primary NPM package
         run: cd cli && bun publish --access public
         env:
-          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
