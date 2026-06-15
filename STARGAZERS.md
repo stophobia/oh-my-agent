@@ -8,7 +8,8 @@ summaries to spot which persona is churning.
 <!-- unstars-end -->
 
 <!-- current-start -->
-## Current (1)
+## Current (2)
 
+- @MoZoHuJa — 2026-06-14
 - @stophobia — 2026-04-16
 <!-- current-end -->
