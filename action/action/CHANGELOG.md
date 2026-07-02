@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/stophobia/oh-my-agent/compare/action-v1.2.0...action-v1.3.0) (2026-07-02)
+
+
+### Features
+
+* **cli:** ingest Cursor transcripts and harden recap dashboard ([21f45a5](https://github.com/stophobia/oh-my-agent/commit/21f45a5dea50ea9c3c7f437070d809a713266a06))
+
+
+### Bug Fixes
+
+* **image:** distribute auto-forward reference mandate in skill bundle ([d2e5ff9](https://github.com/stophobia/oh-my-agent/commit/d2e5ff9fefcd045c9bc34e497932151e02688ccf))
+* **image:** distribute auto-forward reference mandate in skill bundle ([b9b7287](https://github.com/stophobia/oh-my-agent/commit/b9b72874a9bedb0bfeed7c73e67c4d4df14557e9))
+
 ## [1.2.0](https://github.com/first-fluke/oh-my-agent/compare/action-v1.1.2...action-v1.2.0) (2026-05-19)
 
 
