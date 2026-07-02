@@ -1,5 +1,67 @@
 # Changelog
 
+## [4.0.0](https://github.com/stophobia/oh-my-agent/compare/web-v3.5.2...web-v4.0.0) (2026-07-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli:** remove oma export command
+* **config:** agent_cli_mapping removed, replaced by model_preset + agents in .agents/oma-config.yaml. .agents/config/defaults.yaml and .agents/config/models.yaml no longer exist (built-in presets ship in the CLI package; user models inline in oma-config.yaml). The --update-defaults flag is removed. Migration 008 auto-converts legacy projects on oma install / oma update.
+
+### Features
+
+* add telemetry opt-in to oma-config for all vendors ([22265cd](https://github.com/stophobia/oh-my-agent/commit/22265cd913310693418cfb1d04cdeaf04f00ecd5))
+* **cli:** align Cursor Agent auth, models, and dispatch ([2dfc258](https://github.com/stophobia/oh-my-agent/commit/2dfc25866f705ac3c1f501c98131eecd6ea5db3d))
+* **config:** consolidate to model_preset single-file config ([294b8df](https://github.com/stophobia/oh-my-agent/commit/294b8df23b1dc3b9407f64041d0d421aa1caec5a))
+* **models:** upgrade default models to gpt-5.5 and qwen3.6-plus ([bbcd072](https://github.com/stophobia/oh-my-agent/commit/bbcd07273fd817083d8d86a7021b5efd7ef9c34f))
+* **serena:** migrate to uv tool install with per-vendor MCP contexts ([d79e51d](https://github.com/stophobia/oh-my-agent/commit/d79e51dbd44362f18bd7e2978a163e026cfa94b6))
+* **web:** enable PWA via @docusaurus/plugin-pwa ([da1362e](https://github.com/stophobia/oh-my-agent/commit/da1362e39423de6998ec85272c5975fcea859762))
+* **web:** replace favicons and icons with oma mascot ([b65d220](https://github.com/stophobia/oh-my-agent/commit/b65d220c64be5c5658ac0e6ea6998fbd394dc58b))
+
+
+### Bug Fixes
+
+* **i18n:** use 'AI 네이티브 개발' in Korean docs ([dcf2ca6](https://github.com/stophobia/oh-my-agent/commit/dcf2ca6ea5e1dc7c3661b7fa0d812655b43d9480))
+* **image:** distribute auto-forward reference mandate in skill bundle ([d2e5ff9](https://github.com/stophobia/oh-my-agent/commit/d2e5ff9fefcd045c9bc34e497932151e02688ccf))
+* **image:** distribute auto-forward reference mandate in skill bundle ([b9b7287](https://github.com/stophobia/oh-my-agent/commit/b9b72874a9bedb0bfeed7c73e67c4d4df14557e9))
+* **repo:** force LF line endings to unblock Windows CI lint ([78e83a4](https://github.com/stophobia/oh-my-agent/commit/78e83a48d6c267a94cec0c673713ceb9ea33f173))
+* **web:** satisfy PWA install criteria with maskable icons and screenshots ([b154cde](https://github.com/stophobia/oh-my-agent/commit/b154cdea0a115fea9792f3d7e2bf1b129f6bb52e))
+
+
+### Performance
+
+* **web:** enable Docusaurus Faster (Rspack/SWC) and drop webpack override ([139378f](https://github.com/stophobia/oh-my-agent/commit/139378f497531c677a8e62136c445a59bb4e5881))
+
+
+### Refactoring
+
+* **cli:** remove oma export command ([f2cb7a7](https://github.com/stophobia/oh-my-agent/commit/f2cb7a75d8b06009743b0422685a1e57de8c3b05))
+* **web:** drop "make engineer great again" motto from landing ([c4d39d5](https://github.com/stophobia/oh-my-agent/commit/c4d39d57fbd25de713a2663539183bcb7f0b1b4d))
+* **workflows:** merge /exec-plan into /plan with structured docs/plans/ layout ([e634da3](https://github.com/stophobia/oh-my-agent/commit/e634da3b8d55bd7d5f4815b2a4742f9d8561f929))
+
+
+### Documentation
+
+* **benchmarks:** sync oma score to 80.6 across all locales ([fd66b76](https://github.com/stophobia/oh-my-agent/commit/fd66b76b9408df36aebd15898bbdcc644f5f60a1))
+* document antigravity (agy) CLI as first-class vendor ([0703e91](https://github.com/stophobia/oh-my-agent/commit/0703e91988ee008c6c79a54ff67d35b70d956b40))
+* **i18n:** catch up 11 locales with current English source ([9b52e69](https://github.com/stophobia/oh-my-agent/commit/9b52e694a0c6395d7200d58c78d17bf595c6197a))
+* **i18n:** restructure em-dashes in CJK locales (ko/ja/zh) ([8d426d5](https://github.com/stophobia/oh-my-agent/commit/8d426d5c3e2f968a97e3034a2f75aa73da29aaa5))
+* **i18n:** sync 11 locales with auto-detection updates ([e08b953](https://github.com/stophobia/oh-my-agent/commit/e08b95316bd8250a350288d860b0156e06d389a2))
+* **i18n:** sync antigravity (agy) CLI to 11 locales ([f15ee2d](https://github.com/stophobia/oh-my-agent/commit/f15ee2d2dfb6b0ec98f741577d573fef60e9b18c))
+* **i18n:** translate per-agent-models.md into 11 locales ([d8331b5](https://github.com/stophobia/oh-my-agent/commit/d8331b5e307e9358fd1adb54c73e7db9cc363ff7))
+* **i18n:** translate Why oh-my-agent to 11 locales ([eef50e2](https://github.com/stophobia/oh-my-agent/commit/eef50e2ca17fff461aca8537ef6b5311f3eac804))
+* **image-generation:** add 'Use as a Skill' section in 12 languages ([cfbc97f](https://github.com/stophobia/oh-my-agent/commit/cfbc97f0caa5edc1b20f4b52910d89cb71adfa24))
+* list cursor-only preset across guides and i18n locales ([afe62b4](https://github.com/stophobia/oh-my-agent/commit/afe62b481a2b75f0bfe2e4a14aaa6660ab1dbedc))
+* **oma-pm:** unify plan secondary output to result-pm.md ([f797932](https://github.com/stophobia/oh-my-agent/commit/f797932fcb9ff85bccbd5dfef0489310b1a2fe27))
+* update preset name references to new vendor scheme ([2f49afb](https://github.com/stophobia/oh-my-agent/commit/2f49afbab98e733fccef180cd43e1b25d46c4487))
+* **web:** add benchmarks page with 11 locale translations ([ce62a09](https://github.com/stophobia/oh-my-agent/commit/ce62a09efd7ca3e1e64ddab05f74180b4a8378ff))
+* **web:** add oma-image generation guide in 12 languages ([e8d51c0](https://github.com/stophobia/oh-my-agent/commit/e8d51c0420422bc573a2ea1d6d89f6982c524387))
+* **web:** add Why oh-my-agent positioning page ([d29f9dd](https://github.com/stophobia/oh-my-agent/commit/d29f9ddfc38120e98dd86cae9b45772d51234120))
+* **web:** correct project-structure for Docusaurus and workspace commands ([4823a3b](https://github.com/stophobia/oh-my-agent/commit/4823a3b6a02278cd240e736b7a0a179edd1440f2))
+* **web:** document oma vault, --isolation=worktree, and stats cost telemetry ([8f63c07](https://github.com/stophobia/oh-my-agent/commit/8f63c077d5e8a694a11ae3a9bf9729c3937251c9))
+* **workflows:** document /deepsec across all locales ([41a68df](https://github.com/stophobia/oh-my-agent/commit/41a68dff35ace3cd6143d6727e507de7498e022f))
+* **workflows:** document patterns field and language convention ([977457f](https://github.com/stophobia/oh-my-agent/commit/977457f1da99c3e2b5ec5012b9593266435e82b6))
+
 ## [3.5.2](https://github.com/first-fluke/oh-my-agent/compare/web-v3.5.1...web-v3.5.2) (2026-05-20)
 
 
